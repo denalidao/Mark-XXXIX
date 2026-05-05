@@ -171,7 +171,9 @@ def _translate_to_goal_language(content: str, goal: str) -> str:
         print(f"[Executor] ⚠️ Translation failed: {e}")
         return content
 
-def _call_tool(tool: str, parameters: dict, speak: Callable | None) -> str:
+def _call_tool(
+    tool: str, parameters: dict, speak: Callable | None, goal: str = ""
+) -> str:
 
     if tool == "open_app":
         from actions.open_app import open_app
@@ -210,7 +212,14 @@ def _call_tool(tool: str, parameters: dict, speak: Callable | None) -> str:
 
     elif tool == "reminder":
         from actions.reminder import reminder
-        return reminder(parameters=parameters, player=None) or "Done."
+        from jarvis_tool_runner import refine_reminder_args
+
+        params = (
+            refine_reminder_args(goal, parameters)
+            if isinstance(parameters, dict)
+            else parameters
+        )
+        return reminder(parameters=params, player=None) or "Done."
 
     elif tool == "youtube_video":
         from actions.youtube_video import youtube_video
@@ -296,7 +305,7 @@ class AgentExecutor:
                     if cancel_flag and cancel_flag.is_set():
                         break
                     try:
-                        result = _call_tool(tool, params, speak)
+                        result = _call_tool(tool, params, speak, goal=goal)
                         step_results[step_num] = result 
                         completed_steps.append(step)
                         print(f"[Executor] ✅ Step {step_num} done: {str(result)[:100]}")
@@ -339,7 +348,8 @@ class AgentExecutor:
                                     res = _call_tool(
                                         fixed_step["tool"],
                                         fixed_step["parameters"],
-                                        speak
+                                        speak,
+                                        goal=goal,
                                     )
                                     step_results[step_num] = res
                                     completed_steps.append(step)

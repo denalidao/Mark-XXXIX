@@ -294,10 +294,12 @@ TOOL_DECLARATIONS = [
     {
         "name": "reminder",
         "description": (
-            "Schedules notifications via **Windows Task Scheduler** (and one-shot equivalents on "
-            "macOS/Linux). Supports **one-shot** and **recurring** (daily / weekly / weekdays) on "
-            "Windows, **list** / **cancel** of JARVIS* tasks, and optional **open_app_name** to run "
-            "a desktop app after each notification (Windows)."
+            "Schedules **desktop notifications** via **Windows Task Scheduler** (and one-shot "
+            "equivalents on macOS/Linux). This is **not** the Windows **Clock → Alarm** app — "
+            "alarms will **not** appear there. For \"tomorrow at 9am\" or any single time, use "
+            "**recurrence: once** (default). Use **daily** / **weekly** / **weekdays** only when "
+            "the user clearly wants a repeating schedule. Supports **list** / **cancel** of "
+            "JARVIS* tasks and optional **open_app_name** after each notification (Windows)."
         ),
         "parameters": {
             "type": "OBJECT",
@@ -311,7 +313,11 @@ TOOL_DECLARATIONS = [
                 "message": {"type": "STRING", "description": "Toast / notification text (schedule)"},
                 "recurrence": {
                     "type": "STRING",
-                    "description": "once | daily | weekly | weekdays — **Windows only** for non-once.",
+                    "description": (
+                        "once (default for a single time like tomorrow 9am) | daily | weekly | "
+                        "weekdays — **Windows only** for non-once. Omit or use **once** unless the "
+                        "user asked for a repeating schedule."
+                    ),
                 },
                 "job_name": {
                     "type": "STRING",

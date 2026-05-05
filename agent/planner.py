@@ -155,10 +155,15 @@ Steps:
 
 send_message | receiver: Michele, message_text: "I love you", platform: Proton Mail
 
-Goal: "Open the clock and set a reminder for 30 minutes later"
+Goal: "Desktop reminder in 30 minutes (not the Clock app)"
 Steps:
 
-reminder | date: [today], time: [now+30min], message: "Reminder"
+reminder | action: schedule, date: [today], time: [now+30min], message: "Reminder", recurrence: once
+
+Goal: "Set an alarm for tomorrow at 9am"
+Steps:
+
+reminder | action: schedule, date: [tomorrow YYYY-MM-DD], time: 09:00, message: "Alarm", recurrence: once
 
 Goal: "Every weekday at 9am remind me to stand and open Notepad"
 Steps:

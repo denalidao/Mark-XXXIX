@@ -110,6 +110,82 @@ def user_text_explicitly_requests_real_message(user_text: str | None) -> bool:
     return user_text_implies_external_messaging(u)
 
 
+def _user_text_requests_recurring_reminder(user_text: str) -> bool:
+    """Explicit phrases that mean a repeating schedule (not a single fire)."""
+    t = (user_text or "").lower().strip()
+    if not t:
+        return False
+    patterns = (
+        r"\b(every|each)\s+day\b",
+        r"\bevery\s+morning\b",
+        r"\bevery\s+night\b",
+        r"\bevery\s+evening\b",
+        r"\bevery\s+afternoon\b",
+        r"\bdaily\b",
+        r"\bweekdays?\b",
+        r"\bweekly\b",
+        r"\bevery\s+week\b",
+        r"\bmonday\s+through\s+friday\b",
+        r"\brepeat(ing|s)?\b",
+        r"\brecurr(ing|ent|ence)?\b",
+        r"\ball\s+weekdays\b",
+    )
+    return any(re.search(p, t) for p in patterns)
+
+
+def _user_text_suggests_one_shot_reminder(user_text: str) -> bool:
+    """
+    Phrases like \"tomorrow at 9\" or a lone \"alarm\" request are usually one-shot,
+    not ``recurrence: daily`` in Task Scheduler.
+    """
+    t = (user_text or "").lower().strip()
+    if not t:
+        return False
+    if re.search(
+        r"\b(tomorrow|tonight|later\s+today|this\s+evening|"
+        r"next\s+(?:mon(?:day)?|tues(?:day)?|wed(?:nesday)?|thu(?:rsday)?|"
+        r"fri(?:day)?|sat(?:urday)?|sun(?:day)?)|"
+        r"next\s+week\b|one[\s-]?time|just\s+once|only\s+once|single\s+time)\b",
+        t,
+    ):
+        return True
+    if re.search(r"\balarm\b", t) and not re.search(
+        r"\b(every|each|daily|repeat|recurr|weekday|weekly)\b",
+        t,
+    ):
+        return True
+    return False
+
+
+def refine_reminder_args(user_text: str, args: dict) -> dict:
+    """
+    Align ``recurrence`` with what the user said (models often emit ``daily`` for
+    \"tomorrow at 9am\"). Does not change **list** / **cancel**.
+    """
+    if not isinstance(args, dict):
+        return args
+    action = (args.get("action") or "schedule").strip().lower()
+    if action != "schedule":
+        return args
+    rec = (args.get("recurrence") or "once").strip().lower()
+    if rec == "once":
+        return args
+    u = (user_text or "").strip()
+    if not u:
+        return args
+    if _user_text_requests_recurring_reminder(u):
+        return args
+    if _user_text_suggests_one_shot_reminder(u):
+        print(
+            f"[JARVIS] reminder: recurrence {rec!r} -> once (user text looks one-shot, "
+            "not recurring)."
+        )
+        out = {**args, "recurrence": "once"}
+        out.pop("job_name", None)
+        return out
+    return args
+
+
 async def run_jarvis_tool(
     name: str,
     args: dict,
@@ -199,8 +275,14 @@ async def run_jarvis_tool(
                 result = r or f"Message sent to {args.get('receiver')}."
 
         elif name == "reminder":
+            refined = (
+                refine_reminder_args(user_query or "", args)
+                if isinstance(args, dict)
+                else args
+            )
             r = await loop.run_in_executor(
-                None, lambda: reminder(parameters=args, response=None, player=ui)
+                None,
+                lambda p=refined: reminder(parameters=p, response=None, player=ui),
             )
             result = r or "Reminder set."
 

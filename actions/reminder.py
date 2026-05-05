@@ -564,4 +564,11 @@ def reminder(
         )
     if open_norm:
         tail += f" Each run will try to start **{open_norm}** after the notification."
+    if os_name == "windows":
+        tail += (
+            "\n\n**Note (Windows):** This is a **Task Scheduler** job plus a **desktop "
+            "notification** (and optional beeps) — it does **not** add an entry to the "
+            "**Clock → Alarm** app list. For a built-in Clock alarm with snooze in that UI, "
+            "create it in **Clock** manually."
+        )
     return tail
