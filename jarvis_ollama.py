@@ -129,6 +129,58 @@ def _ollama_tool_names(tools: list[dict] | None) -> set[str]:
     return names
 
 
+def _messages_tail_since_last_user(messages: list[dict]) -> list[dict]:
+    """Slice of ``messages`` after the most recent ``role: user`` (current turn)."""
+    idx: int | None = None
+    for i in range(len(messages) - 1, -1, -1):
+        if messages[i].get("role") == "user":
+            idx = i
+            break
+    if idx is None:
+        return list(messages)
+    return messages[idx + 1 :]
+
+
+def _has_open_app_compose_instruct_in_tail(tail: list[dict]) -> bool:
+    """True if ``open_app`` already returned the compose follow-up marker this turn."""
+    for m in tail:
+        if m.get("role") != "tool":
+            continue
+        c = m.get("content")
+        if isinstance(c, str) and "HOST_INSTRUCT" in c:
+            return True
+    return False
+
+
+def _strip_markdown_fences(s: str) -> str:
+    t = (s or "").strip()
+    for pat in (
+        r"^`{3}[a-zA-Z0-9_-]*\s*\r?\n([\s\S]*?)\r?\n`{3}\s*$",
+        r"^`{3}\s*\r?\n([\s\S]*?)\r?\n`{3}\s*$",
+        r"^`{3}[a-zA-Z0-9_-]*\s*\r?\n([\s\S]*?)`{3}\s*$",
+        r"^`{3}\s*\r?\n([\s\S]*?)`{3}\s*$",
+    ):
+        m = re.match(pat, t)
+        if m:
+            return m.group(1).strip()
+    return t
+
+
+def _prose_suitable_for_notepad_compose(content: str) -> bool:
+    """Heuristic: assistant returned body text meant for the editor, not a short chat reply."""
+    t = _strip_markdown_fences(content).strip()
+    if len(t) < 60:
+        return False
+    if t.lstrip().startswith("{"):
+        return False
+    if "def " in t or "\nimport " in t or t.lower().startswith("#include"):
+        return False
+    lines = [ln for ln in t.splitlines() if ln.strip()]
+    if len(lines) < 2 and len(t) < 200:
+        return False
+    return True
+
+
 def _split_for_progressive_speech(text: str, *, max_chunk_chars: int = 260) -> list[str]:
     """
     Split long replies into sentence-like chunks so TTS starts earlier.
@@ -590,6 +642,48 @@ class JarvisOllama:
                     )
                     tool_calls = synthetic
                     content = ""
+
+            if (
+                not tool_calls
+                and content
+                and _has_open_app_compose_instruct_in_tail(
+                    _messages_tail_since_last_user(messages)
+                )
+                and _prose_suitable_for_notepad_compose(content)
+            ):
+                loop = asyncio.get_running_loop()
+                body = _strip_markdown_fences(content).strip()
+                try:
+                    await asyncio.sleep(0.35)
+                    out = await run_jarvis_tool(
+                        "computer_control",
+                        {"action": "smart_type", "text": body},
+                        ui=self.ui,
+                        speak=self.speak,
+                        speak_error=self.speak_error,
+                        loop=loop,
+                        speak_from_tools=False,
+                        user_query=user_text,
+                    )
+                    raw = str((out or {}).get("result") or "")
+                    ok = bool(
+                        re.search(r"(?i)(smart-?typed|typed|pasted|clipboard)", raw)
+                    )
+                    content = (
+                        "I've pasted that into Notepad for you, sir."
+                        if ok
+                        else (
+                            "Notepad should be open, but pasting into the window may have failed "
+                            "(click inside Notepad so it is focused, then ask me to try again)."
+                        )
+                    )
+                    self.ui.write_log(
+                        "SYS: Host ran computer_control(smart_type) from assistant prose "
+                        "(compose-in-notepad recovery)."
+                    )
+                except Exception as ex:
+                    print(f"[JARVIS] compose smart_type inject: {ex}")
+                    content = f"I could not type into Notepad: {ex}"
 
             if (
                 len(messages) == 2
