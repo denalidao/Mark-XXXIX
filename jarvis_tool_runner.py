@@ -157,6 +157,26 @@ def _user_text_suggests_one_shot_reminder(user_text: str) -> bool:
     return False
 
 
+def _coerce_computer_control_open_app_to_open_app(name: str, args: dict) -> tuple[str, dict]:
+    """
+    Local models sometimes emit ``computer_control`` with ``action: \"open_app\"`` instead of
+    the real ``open_app`` tool — that only logs ``[Computer] open_app`` and does not launch.
+    """
+    if name != "computer_control" or not isinstance(args, dict):
+        return name, args
+    act = (args.get("action") or "").strip().lower()
+    if act not in ("open_app", "launch_app", "start_app"):
+        return name, args
+    app = (
+        (args.get("app_name") or args.get("application") or args.get("name") or "")
+        .strip()
+    )
+    if not app:
+        app = "Notepad"
+    print(f"[JARVIS] rerouting computer_control(action={act!r}) → open_app({app!r})")
+    return "open_app", {"app_name": app}
+
+
 def _open_app_compose_followup_hint(user_query: str | None, app_name: str) -> str:
     """
     When Notepad (or similar) is opened and the user asked to *write* / *compose* content,
@@ -325,6 +345,23 @@ async def run_jarvis_tool(
                 user_query, str(args.get("app_name", ""))
             )
 
+        elif name == "computer_control":
+            cname, cargs = _coerce_computer_control_open_app_to_open_app(
+                name, args if isinstance(args, dict) else {}
+            )
+            if cname == "open_app":
+                r = await loop.run_in_executor(
+                    None, lambda: open_app(parameters=cargs, response=None, player=ui)
+                )
+                result = (r or f"Opened {cargs.get('app_name')}.") + _open_app_compose_followup_hint(
+                    user_query, str(cargs.get("app_name", ""))
+                )
+            else:
+                r = await loop.run_in_executor(
+                    None, lambda: computer_control(parameters=args, player=ui)
+                )
+                result = r or "Done."
+
         elif name == "weather_report":
             tool_speak = speak if speak_from_tools else None
             r = await loop.run_in_executor(
@@ -455,12 +492,6 @@ async def run_jarvis_tool(
             r = await loop.run_in_executor(
                 None,
                 lambda: file_processor(parameters=args, player=ui, speak=speak),
-            )
-            result = r or "Done."
-
-        elif name == "computer_control":
-            r = await loop.run_in_executor(
-                None, lambda: computer_control(parameters=args, player=ui)
             )
             result = r or "Done."
 
@@ -978,6 +1009,9 @@ def synthetic_tool_calls_from_text(
         s = re.sub(r"\s*```\s*$", "", s).strip()
 
     def _one(name: str, args: dict) -> list[dict]:
+        name, args = _coerce_computer_control_open_app_to_open_app(
+            name, args if isinstance(args, dict) else {}
+        )
         if name not in valid_names or not isinstance(args, dict):
             return []
         return [
