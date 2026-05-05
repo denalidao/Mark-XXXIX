@@ -308,7 +308,13 @@ TOOL_DECLARATIONS = [
                     "type": "STRING",
                     "description": "schedule (default) | list | cancel",
                 },
-                "date": {"type": "STRING", "description": "YYYY-MM-DD (schedule)"},
+                "date": {
+                    "type": "STRING",
+                    "description": (
+                        "YYYY-MM-DD for the first fire — if the user said **tomorrow**, this must "
+                        "be tomorrow's calendar date, not today."
+                    ),
+                },
                 "time": {"type": "STRING", "description": "HH:MM 24h clock time for the trigger (schedule)"},
                 "message": {"type": "STRING", "description": "Toast / notification text (schedule)"},
                 "recurrence": {

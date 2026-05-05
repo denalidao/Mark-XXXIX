@@ -157,33 +157,86 @@ def _user_text_suggests_one_shot_reminder(user_text: str) -> bool:
     return False
 
 
+def refine_reminder_date_from_user_text(user_text: str, args: dict) -> dict:
+    """
+    Models often pass **today's** ``date`` when the user said **tomorrow** (or **day after
+    tomorrow**). Nudge ``date`` forward when the words and the calendar disagree.
+    """
+    from datetime import datetime, timedelta
+
+    if not isinstance(args, dict):
+        return args
+    date_str = (args.get("date") or "").strip()
+    if not date_str:
+        return args
+    try:
+        parsed = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return args
+
+    t = (user_text or "").lower().strip()
+    if not t:
+        return args
+
+    today = datetime.now().date()
+    out = dict(args)
+
+    def set_date(new_d, old: str, reason: str) -> None:
+        ns = new_d.strftime("%Y-%m-%d")
+        print(f"[JARVIS] reminder: date {old!r} -> {ns!r} ({reason}).")
+        out["date"] = ns
+
+    # Do not bump when they clearly anchored on "today" / tonight.
+    user_said_today = bool(
+        re.search(r"\b(today|tonight|this\s+morning|this\s+afternoon|this\s+evening)\b", t)
+    )
+
+    if re.search(r"\bthe\s+day\s+after\s+tomorrow\b", t):
+        want = today + timedelta(days=2)
+        if parsed < want:
+            set_date(want, date_str, "user said day after tomorrow")
+        return out
+
+    if re.search(r"\btomorrow\b", t) and not user_said_today:
+        want = today + timedelta(days=1)
+        if parsed < want:
+            set_date(want, date_str, "user said tomorrow")
+        return out
+
+    return out
+
+
 def refine_reminder_args(user_text: str, args: dict) -> dict:
     """
     Align ``recurrence`` with what the user said (models often emit ``daily`` for
-    \"tomorrow at 9am\"). Does not change **list** / **cancel**.
+    \"tomorrow at 9am\"). Fix **date** when the user said tomorrow but the model used
+    today. Does not change **list** / **cancel**.
     """
     if not isinstance(args, dict):
         return args
     action = (args.get("action") or "schedule").strip().lower()
     if action != "schedule":
         return args
-    rec = (args.get("recurrence") or "once").strip().lower()
-    if rec == "once":
-        return args
+
     u = (user_text or "").strip()
-    if not u:
-        return args
-    if _user_text_requests_recurring_reminder(u):
-        return args
-    if _user_text_suggests_one_shot_reminder(u):
-        print(
-            f"[JARVIS] reminder: recurrence {rec!r} -> once (user text looks one-shot, "
-            "not recurring)."
-        )
-        out = {**args, "recurrence": "once"}
-        out.pop("job_name", None)
-        return out
-    return args
+    out = dict(args)
+
+    rec = (out.get("recurrence") or "once").strip().lower()
+    if rec != "once" and u:
+        if not _user_text_requests_recurring_reminder(u) and _user_text_suggests_one_shot_reminder(
+            u
+        ):
+            print(
+                f"[JARVIS] reminder: recurrence {rec!r} -> once (user text looks one-shot, "
+                "not recurring)."
+            )
+            out["recurrence"] = "once"
+            out.pop("job_name", None)
+
+    if u:
+        out = refine_reminder_date_from_user_text(u, out)
+
+    return out
 
 
 async def run_jarvis_tool(
