@@ -212,6 +212,9 @@ def _polite_notepad_compose_retry() -> str:
         "Notepad is open, but the paste may not have landed—please click inside the note, "
         "then ask me to try again. Thank you."
     )
+
+
+def _prose_suitable_for_notepad_compose(content: str) -> bool:
     """Heuristic: assistant returned body text meant for the editor, not a short chat reply."""
     t = _strip_markdown_fences(content).strip()
     if len(t) < 60:
