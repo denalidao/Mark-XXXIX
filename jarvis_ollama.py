@@ -654,7 +654,6 @@ class JarvisOllama:
                 loop = asyncio.get_running_loop()
                 body = _strip_markdown_fences(content).strip()
                 try:
-                    await asyncio.sleep(0.35)
                     out = await run_jarvis_tool(
                         "computer_control",
                         {"action": "smart_type", "text": body},
@@ -670,11 +669,11 @@ class JarvisOllama:
                         re.search(r"(?i)(smart-?typed|typed|pasted|clipboard)", raw)
                     )
                     content = (
-                        "I've pasted that into Notepad for you, sir."
+                        "It's in Notepad."
                         if ok
                         else (
-                            "Notepad should be open, but pasting into the window may have failed "
-                            "(click inside Notepad so it is focused, then ask me to try again)."
+                            "Notepad is open, but the paste may have failed — click in the note "
+                            "and ask me to try again."
                         )
                     )
                     self.ui.write_log(
