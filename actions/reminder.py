@@ -128,7 +128,13 @@ def _list_windows_jarvis_tasks() -> str:
             rows.append(f"- {name}  ({nxt})" if nxt else f"- {name}")
     if not rows:
         return "No J.A.R.V.I.S reminders or cron jobs are registered in Task Scheduler."
-    return "Scheduled J.A.R.V.I.S jobs:\n" + "\n".join(rows)
+    header = (
+        "These tasks live in the **root** folder **\\** (Task Scheduler Library — **not** "
+        "under **Microsoft\\Windows\\…**). Open **Win+R** → **taskschd.msc** → click "
+        "**Task Scheduler Library** in the left tree (same level as the **Microsoft** "
+        "folder) → sort the middle list by **Name** and scroll to **JARVIS…**.\n\n"
+    )
+    return header + "Scheduled J.A.R.V.I.S jobs:\n" + "\n".join(rows)
 
 
 def _cancel_windows_task(task_name: str) -> str:
@@ -569,6 +575,11 @@ def reminder(
             "\n\n**Note (Windows):** This is a **Task Scheduler** job plus a **desktop "
             "notification** (and optional beeps) — it does **not** add an entry to the "
             "**Clock → Alarm** app list. For a built-in Clock alarm with snooze in that UI, "
-            "create it in **Clock** manually."
+            "create it in **Clock** manually.\n\n"
+            "**Find it in Task Scheduler:** **Win+R** → type **taskschd.msc** → Enter. In the "
+            "left tree, click **Task Scheduler Library** (the item **next to** the **Microsoft** "
+            "folder — **not** inside **Microsoft\\Windows**). In the middle pane, sort by **Name** "
+            f"and find **{task_name}** (some views show **\\{task_name}**). "
+            f"Verify from a terminal: schtasks /Query /TN {task_name} /FO LIST"
         )
     return tail
