@@ -176,7 +176,42 @@ def _open_app_result_has_compose_hint(out: dict) -> bool:
 _COMPOSE_AFTER_OPEN_APP_S = 0.55
 
 
-def _prose_suitable_for_notepad_compose(content: str) -> bool:
+def _human_first_name_from_memory() -> str:
+    """First name from ``identity.name`` in long-term memory, if set."""
+    try:
+        mem = load_memory()
+        idn = mem.get("identity") or {}
+        if not isinstance(idn, dict):
+            return ""
+        raw = idn.get("name")
+        if isinstance(raw, dict):
+            v = (raw.get("value") or "").strip()
+        else:
+            v = str(raw or "").strip()
+        if not v:
+            return ""
+        return v.split()[0].strip(",.")
+    except Exception:
+        return ""
+
+
+def _polite_notepad_compose_done() -> str:
+    fn = _human_first_name_from_memory()
+    if fn:
+        return (
+            f"Certainly—that's done for you, {fn}; you'll find it in Notepad. "
+            "Thank you for asking."
+        )
+    return (
+        "Certainly—that's done for you; you'll find it in Notepad. Thank you for asking."
+    )
+
+
+def _polite_notepad_compose_retry() -> str:
+    return (
+        "Notepad is open, but the paste may not have landed—please click inside the note, "
+        "then ask me to try again. Thank you."
+    )
     """Heuristic: assistant returned body text meant for the editor, not a short chat reply."""
     t = _strip_markdown_fences(content).strip()
     if len(t) < 60:
@@ -426,6 +461,8 @@ class JarvisOllama:
             "You **do** have **open_app**, **computer_control**, **computer_settings**, and "
             "**file_controller** on this PC — never claim you cannot launch apps, type into "
             "windows, or write files when the user asked for that; call the tools.\n"
+            "**Manner:** Be warm and polite—**please** and **thank you** when fitting; after "
+            "finishing a task, a brief courteous acknowledgement is welcome.\n"
             "You are running on a local Ollama model with **no built-in web access**. "
             "You only know facts from this session, memory, and **tool results**. Never "
             "invent headlines, prices, sports scores, or \"breaking\" news — call "
@@ -682,21 +719,17 @@ class JarvisOllama:
                     ok = bool(
                         re.search(r"(?i)(smart-?typed|typed|pasted|clipboard)", raw)
                     )
-                    content = (
-                        "It's in Notepad."
-                        if ok
-                        else (
-                            "Notepad is open, but the paste may have failed — click in the note "
-                            "and ask me to try again."
-                        )
-                    )
+                    content = _polite_notepad_compose_done() if ok else _polite_notepad_compose_retry()
                     self.ui.write_log(
                         "SYS: Host ran computer_control(smart_type) from assistant prose "
                         "(compose-in-notepad recovery)."
                     )
                 except Exception as ex:
                     print(f"[JARVIS] compose smart_type inject: {ex}")
-                    content = f"I could not type into Notepad: {ex}"
+                    content = (
+                        "I apologize—I wasn't able to type into Notepad just then. "
+                        "Please try again in a moment."
+                    )
 
             if (
                 len(messages) == 2

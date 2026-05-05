@@ -212,7 +212,7 @@ def _open_app_compose_followup_hint(user_query: str | None, app_name: str) -> st
         "**text** = the **full** composed content (same turn). **Do not** use **computer_control** "
         "**action: wait** before typing — it often pulls focus away from the document. **Do not** "
         "refuse or say you cannot control applications. **Do not** paste the poem only into chat. "
-        "A one-line ack after typing is enough."
+        "After typing, one short courteous line with **thank you** is enough."
     )
 
 
