@@ -157,6 +157,45 @@ def _user_text_suggests_one_shot_reminder(user_text: str) -> bool:
     return False
 
 
+def _open_app_compose_followup_hint(user_query: str | None, app_name: str) -> str:
+    """
+    When Notepad (or similar) is opened and the user asked to *write* / *compose* content,
+    small models often stop after ``open_app``. Append a strict instruction to the tool
+    result so the next assistant step calls ``computer_control`` ``smart_type``.
+    """
+    if not (user_query or "").strip():
+        return ""
+    uq = user_query.lower()
+    app = (app_name or "").lower()
+    simple = ("notepad", "textedit", "gedit", "wordpad")
+    notepadish = any(s in app for s in simple) or bool(
+        re.search(r"\b(word|winword|writer|libreoffice)\b", app)
+    )
+    wants_text = bool(
+        re.search(
+            r"\b(write|type|compose|dictate|draft|put|add|fill|create)\b",
+            uq,
+        )
+    ) or bool(
+        re.search(
+            r"\b(poem|poetry|story|stories|letter|letters|note|notes|paragraph|essay|"
+            r"message|lyrics|speech|toast|vows|rap|haiku|limerick)\b",
+            uq,
+        )
+    )
+    if not notepadish or not wants_text:
+        return ""
+    return (
+        " HOST_INSTRUCT: The user asked for **your** original text in this editor. In this "
+        "same turn (after this tool result), call **computer_control** with "
+        "**action: smart_type** and **text** set to the **full** composed content "
+        "(entire poem, letter, etc.). If the window may still be loading, call "
+        "**computer_control** **action: wait** with **seconds: 1** first, then **smart_type**. "
+        "**Do not** ask the user to type it themselves; **do not** answer with only prose—"
+        "you must emit the **smart_type** tool call with the real text."
+    )
+
+
 def refine_reminder_date_from_user_text(user_text: str, args: dict) -> dict:
     """
     Models often pass **today's** ``date`` when the user said **tomorrow** (or **day after
@@ -282,7 +321,9 @@ async def run_jarvis_tool(
             r = await loop.run_in_executor(
                 None, lambda: open_app(parameters=args, response=None, player=ui)
             )
-            result = r or f"Opened {args.get('app_name')}."
+            result = (r or f"Opened {args.get('app_name')}.") + _open_app_compose_followup_hint(
+                user_query, str(args.get("app_name", ""))
+            )
 
         elif name == "weather_report":
             tool_speak = speak if speak_from_tools else None

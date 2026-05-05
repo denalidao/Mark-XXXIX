@@ -186,9 +186,12 @@ TOOL_DECLARATIONS = [
     {
         "name": "open_app",
         "description": (
-            "Opens any application on the computer. "
-            "Use this whenever the user asks to open, launch, or start any app, "
-            "website, or program. Always call this tool — never just say you opened it."
+            "Launches an application — **only** starts the process; it does **not** type or "
+            "create file contents. If the user asked to **write**, **compose**, **draft**, or "
+            "**type** text **in** Notepad, Word, TextEdit, etc., you must also call "
+            "**computer_control** (**smart_type** with **text**) after the window is open, "
+            "**or** use **file_controller** **create_file** / **write** with the full text "
+            "then open the file. Never tell the user to type the content for you."
         ),
         "parameters": {
             "type": "OBJECT",
@@ -516,12 +519,22 @@ TOOL_DECLARATIONS = [
     },
     {
         "name": "computer_control",
-        "description": "Direct computer control: type, click, hotkeys, scroll, move mouse, screenshots, find elements on screen.",
+        "description": (
+            "Desktop automation: type/paste into the **focused** window (**smart_type** for "
+            "long text), clicks, hotkeys, wait, screenshots. Use **smart_type** + **text** after "
+            "**open_app** when the user asked you to compose/write content in Notepad or similar."
+        ),
         "parameters": {
             "type": "OBJECT",
             "properties": {
                 "action":      {"type": "STRING", "description": "type | smart_type | click | double_click | right_click | hotkey | press | scroll | move | copy | paste | screenshot | wait | clear_field | focus_window | screen_find | screen_click | random_data | user_data"},
-                "text":        {"type": "STRING", "description": "Text to type or paste"},
+                "text":        {
+                    "type": "STRING",
+                    "description": (
+                        "Full string for **type** / **smart_type** / **paste** — e.g. entire poem "
+                        "or letter the user asked for."
+                    ),
+                },
                 "x":           {"type": "INTEGER", "description": "X coordinate"},
                 "y":           {"type": "INTEGER", "description": "Y coordinate"},
                 "keys":        {"type": "STRING", "description": "Key combination e.g. 'ctrl+c'"},
