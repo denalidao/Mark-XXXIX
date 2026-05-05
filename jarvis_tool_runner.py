@@ -206,12 +206,13 @@ def _open_app_compose_followup_hint(user_query: str | None, app_name: str) -> st
     if not notepadish or not wants_text:
         return ""
     return (
-        " HOST_INSTRUCT: The user asked for **your** original text in this editor. Notepad "
-        "opens with the caret already in the document — call **computer_control** next with "
-        "**action: smart_type** and **text** set to the **full** composed content immediately; "
-        "**do not** insert a **wait** step (it steals focus from the editor). **Do not** ask the "
-        "user to type it themselves; **do not** paste the poem only into chat—emit **smart_type** "
-        "with the real text. A one-line spoken ack after typing is enough."
+        " HOST_INSTRUCT: The user asked for **your** original text in this editor. The **host** "
+        "waits briefly after this launch before running the **next** tool in the same batch so "
+        "the window is ready. Call **computer_control** next with **action: smart_type** and "
+        "**text** = the **full** composed content (same turn). **Do not** use **computer_control** "
+        "**action: wait** before typing — it often pulls focus away from the document. **Do not** "
+        "refuse or say you cannot control applications. **Do not** paste the poem only into chat. "
+        "A one-line ack after typing is enough."
     )
 
 

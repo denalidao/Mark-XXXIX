@@ -166,6 +166,16 @@ def _strip_markdown_fences(s: str) -> str:
     return t
 
 
+def _open_app_result_has_compose_hint(out: dict) -> bool:
+    """True when ``open_app`` tool output included the compose follow-up marker."""
+    return "HOST_INSTRUCT" in str((out or {}).get("result") or "")
+
+
+# After ``open_app`` with compose hint, brief asyncio pause before the next tool (same batch).
+# Avoid ``computer_control`` ``wait`` here — it tends to steal focus from Notepad.
+_COMPOSE_AFTER_OPEN_APP_S = 0.55
+
+
 def _prose_suitable_for_notepad_compose(content: str) -> bool:
     """Heuristic: assistant returned body text meant for the editor, not a short chat reply."""
     t = _strip_markdown_fences(content).strip()
@@ -413,6 +423,9 @@ class JarvisOllama:
         parts.append(sys_prompt)
         parts.append(
             "\n[LOCAL MODE]\n"
+            "You **do** have **open_app**, **computer_control**, **computer_settings**, and "
+            "**file_controller** on this PC — never claim you cannot launch apps, type into "
+            "windows, or write files when the user asked for that; call the tools.\n"
             "You are running on a local Ollama model with **no built-in web access**. "
             "You only know facts from this session, memory, and **tool results**. Never "
             "invent headlines, prices, sports scores, or \"breaking\" news — call "
@@ -654,6 +667,7 @@ class JarvisOllama:
                 loop = asyncio.get_running_loop()
                 body = _strip_markdown_fences(content).strip()
                 try:
+                    await asyncio.sleep(_COMPOSE_AFTER_OPEN_APP_S)
                     out = await run_jarvis_tool(
                         "computer_control",
                         {"action": "smart_type", "text": body},
@@ -792,6 +806,8 @@ class JarvisOllama:
                     if tid:
                         tool_entry["tool_call_id"] = str(tid)
                     messages.append(tool_entry)
+                    if tname == "open_app" and _open_app_result_has_compose_hint(out):
+                        await asyncio.sleep(_COMPOSE_AFTER_OPEN_APP_S)
                 if only_vision:
                     self.ui.write_log(
                         "SYS: Vision running in background — skipping extra chat reply "
