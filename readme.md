@@ -77,6 +77,8 @@ More detail: **`capabilities/README.md`** and each subfolder’s **`README.md`**
 
 **`data/corpus_config.json`** describes where large **text** and **PDF** libraries live (`data/text`, `data/pdf`). Those directories are **gitignored** so clones stay small. Copy your own materials locally if you use chunking or PDF alignment features.
 
+**Where to get files:** Public books, seminars, and PDFs are often mirrored on the **[Internet Archive](https://archive.org)** (`archive.org`) — search or browse collections, then download (or use **[Wayback Machine](https://web.archive.org)** snapshots of a specific URL) and place the result under `data/text` or `data/pdf` as your layout requires. Respect copyright and terms for anything you add locally; the repo does not redistribute those corpora.
+
 ---
 
 ## ⚡ Quick Start

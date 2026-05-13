@@ -38,6 +38,46 @@ SpeakErrFn = Callable[[str, str], None]
 _TOOL_RESULT_LOG_CHARS = 400
 
 
+def _print_parse_syntax_grammar_capability_summary(stdout_json: str) -> None:
+    """
+    ``run_capability`` returns stdout as a **string**. The first ~400 chars of the log
+    only show static ``rules.json`` headers (``parse`` / ``syntax`` / ``grammar``); the
+    real per-token analysis lives under ``sentences``. Print a one-line summary so the
+    terminal reflects that the JSON packs drove classification.
+    """
+    s = (stdout_json or "").strip()
+    if not s.startswith("{"):
+        return
+    try:
+        data = json.loads(s)
+    except json.JSONDecodeError:
+        return
+    if not isinstance(data, dict) or data.get("ok") is not True:
+        return
+    sc = data.get("sentence_count")
+    sa = data.get("sentences_analyzed")
+    sents = data.get("sentences")
+    cls0 = None
+    ntok = None
+    if isinstance(sents, list) and sents and isinstance(sents[0], dict):
+        cls0 = sents[0].get("classification")
+        toks = sents[0].get("tokens")
+        if isinstance(toks, list):
+            ntok = len(toks)
+    suf = data.get("suffix_engine") if isinstance(data.get("suffix_engine"), dict) else {}
+    pfx = data.get("prefix_engine") if isinstance(data.get("prefix_engine"), dict) else {}
+    print(
+        "[JARVIS] 📋 parse_syntax_grammar: "
+        f"rules.json drove token/suffix/prefix passes; "
+        f"sentence_count={sc!r} analyzed={sa!r} "
+        f"first_classification={cls0!r} first_token_count={ntok!r} "
+        f"suffix_engine={'loaded' if suf.get('loaded') else 'missing'} "
+        f"prefix_engine={'loaded' if pfx.get('loaded') else 'missing'}. "
+        "Top-level parse/syntax/grammar in JSON are static labels from rules.json; "
+        "see ``sentences``[] for per-sentence output."
+    )
+
+
 def user_text_implies_external_messaging(user_text: str | None) -> bool:
     """
     True when the user clearly asked to use WhatsApp/SMS/etc., not only to speak
@@ -709,6 +749,10 @@ async def run_jarvis_tool(
 
     _out = str(result)
     _lim = _TOOL_RESULT_LOG_CHARS
+    if name == "run_capability" and isinstance(args, dict):
+        _cid = str(args.get("capability_id") or args.get("capability") or "").strip().lower()
+        if _cid == "parse_syntax_grammar":
+            _print_parse_syntax_grammar_capability_summary(_out)
     if len(_out) > _lim:
         print(f"[JARVIS] 📤 {name} → {_out[:_lim]}… ({len(_out)} chars total, truncated for terminal)")
     else:

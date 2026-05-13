@@ -6,6 +6,7 @@ import asyncio
 import json
 import os
 import re
+import time
 import sys
 import threading
 import traceback
@@ -41,6 +42,14 @@ from memory.session_context import (
 # Neural TTS (Coqui) warm-up runs once per process so backend restarts do not
 # spawn a second full GPU weight load.
 _NEURAL_TTS_PRELOAD_STARTED = False
+
+# ``parse syntax grammar`` in user chat, plus common misspelling **grammer**, and PSG /
+# quantum phrasing. (A naive ``gramm?ar`` pattern matches ``gram``+optional``m``+``ar``
+# only — i.e. "grammar" — and misses "grammer".)
+_PSG_DISCOURSE_CUE_RE = re.compile(
+    r"parse\s*syntax\s*gramm[ae]r|quantum\s+gramm[ae]r|\bpsg\b",
+    re.IGNORECASE,
+)
 
 
 def _base_dir() -> Path:
@@ -106,7 +115,54 @@ def _run_capability_psg_style_dedupe_key(args: dict[str, Any]) -> tuple[str, str
     return (cid, body[:12_000])
 
 
-def _ollama_tool_message_body(tool_name: str, payload: dict[str, Any]) -> str:
+def _parse_syntax_psg_tool_digest(result: object) -> str:
+    """One-line hook from ``parse_syntax_grammar`` JSON so small models do not only echo input."""
+    obj: object = result
+    if isinstance(result, str):
+        s = result.strip()
+        if not s.startswith("{"):
+            return ""
+        try:
+            obj = json.loads(s)
+        except json.JSONDecodeError:
+            return ""
+    if not isinstance(obj, dict) or obj.get("ok") is not True:
+        return ""
+    sents = obj.get("sentences")
+    if not isinstance(sents, list) or not sents:
+        return ""
+    s0 = sents[0]
+    if not isinstance(s0, dict):
+        return ""
+    cl = s0.get("classification")
+    if cl is None:
+        return ""
+    if isinstance(cl, str):
+        cl_s = cl.strip()
+    else:
+        try:
+            cl_s = json.dumps(cl, ensure_ascii=False)
+        except (TypeError, ValueError):
+            cl_s = str(cl)
+    cl_s = cl_s.strip()
+    if not cl_s:
+        return ""
+    if len(cl_s) > 1200:
+        cl_s = cl_s[:1197].rstrip() + "…"
+    return (
+        "FIRST_SENTENCE_CLASSIFICATION (from tool JSON — your reply **must** reference "
+        "this; do not answer with only the raw input line):\n"
+        + cl_s
+        + "\n\n"
+    )
+
+
+def _ollama_tool_message_body(
+    tool_name: str,
+    payload: dict[str, Any],
+    *,
+    run_capability_request: dict[str, Any] | None = None,
+) -> str:
     """
     Ollama small models often ignore ``{\"result\": ...}`` JSON. Use explicit prose
     so the model treats tool output as real retrieved data to summarize.
@@ -145,8 +201,38 @@ def _ollama_tool_message_body(tool_name: str, payload: dict[str, Any]) -> str:
     if tool_name == "run_capability":
         lim = 6_000
         body = raw_s if len(raw_s) <= lim else raw_s[: lim - 3] + "..."
+        anchor = ""
+        digest = ""
+        style = ""
+        if isinstance(run_capability_request, dict):
+            cid = str(
+                run_capability_request.get("capability_id")
+                or run_capability_request.get("capability")
+                or ""
+            ).strip().lower()
+            rtx = str(run_capability_request.get("text") or "").strip()
+            if cid == "parse_syntax_grammar" and rtx:
+                disp = rtx if len(rtx) <= 480 else rtx[:477].rstrip() + "…"
+                anchor = (
+                    "INPUT_SENTENCE_THIS_RUN (the JSON below tags **only** this line; "
+                    "your reply must rewrite or summarize **this** sentence — not a different "
+                    "line from [RECENT CONVERSATION] or earlier turns):\n"
+                    f"«{disp}»\n\n"
+                )
+                digest = _parse_syntax_psg_tool_digest(raw)
+                style = (
+                    "This tool returns **analysis JSON** (``sentences``, ``classification``, engines). "
+                    "It does **not** guarantee a single polished alternate English line. Speak **2–5 "
+                    "sentences** that explain how the sentence was tagged or structured; quote at least "
+                    "one concrete label or field from the JSON or from FIRST_SENTENCE_CLASSIFICATION. "
+                    "If your reply text is **identical** to INPUT_SENTENCE_THIS_RUN (ignoring spaces), "
+                    "you failed — revise using the classification block.\n\n"
+                )
         return (
-            "RUN_CAPABILITY (host already executed this call). **Do not** call "
+            anchor
+            + digest
+            + style
+            + "RUN_CAPABILITY (host already executed this call). **Do not** call "
             "``run_capability`` again with the same ``capability_id`` and same ``text`` "
             "in this user turn — you already have the JSON below. If the user asked for a "
             "**rewritten** or **tagged** sentence in Parse Syntax Grammar style, write that "
@@ -342,6 +428,167 @@ def _user_means_read_browser_page(user_text: str) -> bool:
     return False
 
 
+def _user_requests_parse_syntax_rewrite(user_text: str) -> bool:
+    """
+    True when the user asked to rewrite / tag / analyze text in Parse Syntax Grammar
+    (or common misspellings). Used to invoke ``run_capability`` when the model only
+    echoes prose or buries JSON so synthetic ``run_capability`` is blocked.
+    """
+    t = (user_text or "").strip()
+    if len(t) < 20:
+        return False
+    tl = t.lower()
+    if re.search(r"(?i)\bwhat\s+(?:is|are)\s+(?:parse|quantum|psg)\b", tl):
+        return False
+    has_domain = bool(_PSG_DISCOURSE_CUE_RE.search(t))
+    if not has_domain:
+        return False
+    return bool(
+        re.search(
+            r"(?i)\brewrite|rewite|re-write|retag|\btag\b|tagging|convert|transform|"
+            r"\bpipeline\b|\banalyze\b|in\s+psg\b",
+            tl,
+        )
+    )
+
+
+def _extract_unquoted_body_after_psg_cue(user_text: str) -> str | None:
+    """
+    Text after the last ``parse syntax grammar`` / ``quantum grammar`` / ``PSG`` cue,
+    when the user did not use quotes (e.g. ``…grammer. A kingdom not built…``).
+    """
+    t = (user_text or "").strip()
+    if len(t) < 25:
+        return None
+    best_end = -1
+    for m in _PSG_DISCOURSE_CUE_RE.finditer(t):
+        best_end = max(best_end, m.end())
+    if best_end < 0:
+        return None
+    tail = t[best_end:].strip()
+    tail = re.sub(r"^[.:;?,\s\-—]+", "", tail).strip()
+    if len(tail) >= 15:
+        return tail
+    return None
+
+
+def _extract_body_for_psg_user_turn(user_text: str) -> str | None:
+    """Quoted span, ``sentence:/text:`` tail, or unquoted text after the PSG / quantum cue."""
+    t = (user_text or "").strip()
+    if len(t) < 15:
+        return None
+    dq = re.findall(r'"([^"]{14,})"', t)
+    if dq:
+        body = max(dq, key=len).strip()
+        if len(body) >= 14:
+            return body
+    curly = re.findall("\u201c([^\u201d]{14,})\u201d", t)
+    if curly:
+        body = max(curly, key=len).strip()
+        if len(body) >= 14:
+            return body
+    sq = re.findall(r"'([^']{14,})'", t)
+    if sq:
+        body = max(sq, key=len).strip()
+        if len(body) >= 14:
+            return body
+    m = re.search(r"(?i)(?:sentence|text)\s*[:\u2014\-]\s*(.{14,})$", t)
+    if m:
+        body = m.group(1).strip().strip('"').strip("'")
+        if len(body) >= 14:
+            return body
+    tail = _extract_unquoted_body_after_psg_cue(t)
+    if tail:
+        return tail
+    return None
+
+
+def _psg_action_for_user_turn(user_text: str) -> str:
+    tl = (user_text or "").lower()
+    if re.search(
+        r"(?i)\brewrite|rewite|re-write|retag|\btag\b|tagging|convert|transform",
+        tl,
+    ):
+        return "pipeline"
+    if re.search(r"(?i)\banalyze\b", tl):
+        return "analyze"
+    return "pipeline"
+
+
+def _tool_calls_include_parse_syntax_psg(tool_calls: list | None) -> bool:
+    """True if the batch already invokes ``parse_syntax_grammar`` via ``run_capability``."""
+    if not tool_calls:
+        return False
+    for tc in tool_calls:
+        if not isinstance(tc, dict):
+            continue
+        fn = tc.get("function") or {}
+        if (fn.get("name") or "").strip() != "run_capability":
+            continue
+        args = parse_tool_arguments(fn.get("arguments"))
+        if not isinstance(args, dict):
+            continue
+        cid = str(args.get("capability_id") or args.get("capability") or "").strip().lower()
+        if cid == "parse_syntax_grammar":
+            return True
+    return False
+
+
+def _coerce_run_capability_parse_syntax_text(
+    user_text: str, tool_calls: list[dict]
+) -> list[dict]:
+    """
+    If the user turn clearly asks for PSG on a quoted sentence but the model passed
+    wrong / empty ``text``, replace ``text`` (and default ``action``) from the user message.
+    """
+    if not tool_calls or not _user_requests_parse_syntax_rewrite(user_text):
+        return tool_calls
+    body = _extract_body_for_psg_user_turn(user_text)
+    if not body:
+        return tool_calls
+    nt = " ".join((user_text or "").split())
+    out: list[dict] = []
+    for tc in tool_calls:
+        if not isinstance(tc, dict):
+            out.append(tc)
+            continue
+        fn = tc.get("function") or {}
+        name = (fn.get("name") or "").strip()
+        if name != "run_capability":
+            out.append(tc)
+            continue
+        args = parse_tool_arguments(fn.get("arguments"))
+        if not isinstance(args, dict):
+            out.append(tc)
+            continue
+        cid = str(args.get("capability_id") or args.get("capability") or "").strip().lower()
+        if cid != "parse_syntax_grammar":
+            out.append(tc)
+            continue
+        ttxt = str(args.get("text") or "").strip()
+        tnorm = " ".join(ttxt.split()) if ttxt else ""
+        replace = False
+        if not ttxt:
+            replace = True
+        elif tnorm and tnorm not in nt:
+            replace = True
+        elif len(body) > len(ttxt) + 12:
+            replace = True
+        if not replace:
+            out.append(tc)
+            continue
+        row = dict(tc)
+        nfn = dict(fn)
+        merged = dict(args)
+        merged["capability_id"] = "parse_syntax_grammar"
+        merged["text"] = body
+        merged.setdefault("action", _psg_action_for_user_turn(user_text))
+        nfn["arguments"] = merged
+        row["function"] = nfn
+        out.append(row)
+    return out
+
+
 def _coerce_screen_process_to_browser_read(
     user_text: str,
     tool_calls: list[dict],
@@ -476,6 +723,8 @@ class JarvisOllama:
     def __init__(self, ui, tool_declarations: list[dict]) -> None:
         self.ui = ui
         self._tool_declarations = tool_declarations
+        self._dup_user_mono: float = 0.0
+        self._dup_user_key: str = ""
         self._loop: asyncio.AbstractEventLoop | None = None
         self._user_queue: asyncio.Queue[QueueItem] | None = None
         self._ollama_tools = ollama_tools_from_gemini_declarations(tool_declarations)
@@ -742,6 +991,21 @@ class JarvisOllama:
 
     async def _run_one_exchange(self, user_text: str) -> None:
         assert self._user_queue is not None
+        norm = " ".join((user_text or "").split())
+        if len(norm) > 12:
+            now = time.monotonic()
+            if (
+                norm == self._dup_user_key
+                and (now - self._dup_user_mono) < 2.0
+            ):
+                self.ui.write_log(
+                    "SYS: Ignored duplicate of the previous user message (within 2s)."
+                )
+                if not self.ui.muted:
+                    self.ui.set_state("LISTENING")
+                return
+            self._dup_user_mono = now
+            self._dup_user_key = norm
         self.ui.set_state("THINKING")
         maybe_clear_session_via_env()
         sys_instr = self._build_system_instruction()
@@ -849,7 +1113,48 @@ class JarvisOllama:
                     "SYS: Read-page intent — invoking browser_control(get_text)."
                 )
 
+            if (
+                len(messages) == 2
+                and _user_requests_parse_syntax_rewrite(user_text)
+                and "run_capability" in valid_names
+                and not _tool_calls_include_parse_syntax_psg(tool_calls)
+            ):
+                body = _extract_body_for_psg_user_turn(user_text)
+                if body:
+                    act = _psg_action_for_user_turn(user_text)
+                    had_other = bool(tool_calls)
+                    tool_calls = [
+                        {
+                            "function": {
+                                "name": "run_capability",
+                                "arguments": {
+                                    "capability_id": "parse_syntax_grammar",
+                                    "action": act,
+                                    "text": body,
+                                },
+                            }
+                        }
+                    ]
+                    content = ""
+                    if had_other:
+                        self.ui.write_log(
+                            "SYS: Host forcing run_capability(parse_syntax_grammar) — "
+                            "model plain-text / tool guess did not run PSG on this request."
+                        )
+                    else:
+                        self.ui.write_log(
+                            "SYS: Parse-syntax rewrite intent — invoking "
+                            "run_capability(parse_syntax_grammar)."
+                        )
+                    print(
+                        "[JARVIS] Host inject: run_capability(parse_syntax_grammar) "
+                        f"action={act} text_len={len(body)}"
+                    )
+
             if tool_calls:
+                tool_calls = _coerce_run_capability_parse_syntax_text(
+                    user_text, tool_calls
+                )
                 tool_calls = _coerce_screen_process_to_browser_read(
                     user_text, tool_calls, valid_names=valid_names
                 )
@@ -933,7 +1238,13 @@ class JarvisOllama:
                     )
                     if rk is not None:
                         psg_style_done.add(rk)
-                    tool_body = _ollama_tool_message_body(tname, out)
+                    tool_body = _ollama_tool_message_body(
+                        tname,
+                        out,
+                        run_capability_request=args
+                        if tname == "run_capability" and isinstance(args, dict)
+                        else None,
+                    )
                     tool_entry: dict = {
                         "role": "tool",
                         "content": tool_body,
