@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "name": "parse_syntax_grammar",
+    "version": 1,
+    "disclaimer": "Experimental symbolic rule pack derived from transcript claims. Not validated linguistics or law. Use for reproducible tagging only."
+  },
+  "parse": { "function": "parts_of_speech_analysis" },
+  "syntax": { "function": "word_relationship_mapping" },
+  "grammar": { "function": "sentence_structure_validation" },
+  "sentence_rules": { "max_primary_verbs": 1 },
+  "adverb_behavior": {
+    "creates_motion": true,
+    "creates_action_state": true
+  },
+  "fact_structure": {
+    "required_pattern": ["preposition", "article_or_possessive", "noun"]
+  },
+  "noun_stability": { "requires_prepositional_anchor": true },
+  "negative_prefixes": ["un", "no", "de", "dis", "pre", "o", "in"],
+  "prefix_behaviors": {
+    "un": "claimed_negation_no",
+    "de": "claimed_no_contract",
+    "dis": "claimed_trickery_separation",
+    "pre": "claimed_negation_no",
+    "in": "claimed_adverbial_motion",
+    "o": "claimed_negation_marker"
+  },
+  "vowel_prefix_negation": {
+    "enabled": true,
+    "vowels": ["a", "e", "i", "o", "u"]
+  },
+  "contract_suffixes": ["ion", "al", "ent", "tion"],
+  "parts_of_speech_roles": {
+    "adverb": { "modifies": "verb", "creates_motion": true },
+    "verb": { "type": "motion_state" },
+    "noun": { "requires_anchor": true },
+    "adjective": { "role": "descriptor" }
+  },
+  "fiction_patterns": ["adverb_verb", "pronoun_adverb", "multi_verb"],
+  "legal_claim_tags": [
+    "court_jurisdiction_fictional",
+    "maritime_jurisdiction",
+    "speech_validation_babel",
+    "structural_parse_priority"
+  ],
+  "training_examples": [
+    {
+      "phrase": "destroyer of worlds",
+      "claimed_tokens": { "de": "negation", "stroy": "contract", "of": "adverb_connector", "world": "verb_state" },
+      "classification": "motion_conversion"
+    },
+    {
+      "phrase": "attorney at law",
+      "classification": "non_factual_jurisdiction"
+    },
+    {
+      "phrase": "no law of fact shall be tried in court",
+      "classification": "fiction"
+    },
+    {
+      "phrase": "opinion",
+      "claimed_meaning": "no_attached_contract"
+    },
+    {
+      "phrase": "again",
+      "classification": "negated_gain"
+    },
+    {
+      "phrase": "illusion",
+      "claimed_meaning": "cannot_see_contract"
+    },
+    {
+      "phrase": "president",
+      "claimed_meaning": "no_simulation_contract"
+    },
+    {
+      "phrase": "united states",
+      "classification": "non_sovereign_condition"
+    },
+    {
+      "phrase": "district court",
+      "classification": "foreign_jurisdiction"
+    },
+    {
+      "phrase": "for the protection of the law",
+      "classification": "factual_structure"
+    },
+    {
+      "phrase": "my pen",
+      "classification": "unanchored_noun_verb_state_claim"
+    },
+    {
+      "phrase": "with my pen",
+      "classification": "factual"
+    },
+    {
+      "phrase": "for the writ of de novo",
+      "classification": "legal_fact_structure"
+    },
+    {
+      "phrase": "mortgage",
+      "classification": "unsupported_pronoun"
+    },
+    {
+      "phrase": "deed of trust",
+      "classification": "verb_conversion"
+    },
+    {
+      "phrase": "earth is a vessel in a sea of space",
+      "classification": "maritime_conversion"
+    }
+  ]
+}

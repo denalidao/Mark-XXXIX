@@ -2,6 +2,7 @@ import asyncio
 import os
 import re
 import threading
+import time
 import json
 import sys
 import shutil
@@ -363,6 +364,87 @@ TOOL_DECLARATIONS = [
         }
     },
     {
+        "name": "run_capability",
+        "description": (
+            "Runs a **local playbook** under ``capabilities/<id>/`` (allowlist in "
+            "``capabilities/ROUTER.json``). Use for **new** site/app automation: GitHub (Brave), "
+            "X / ChatGPT / Google Stitch / Gmail / Proton / YouTube (Edge), WhatsApp + denalidao "
+            "(Brave), Telegram (desktop), **parse_syntax_grammar** (deterministic JSON text tagging), "
+            "**numbers_engine** (cipher spec + ordinal/homophone/syntax-digit layers). "
+            "For **YouTube play**, pass **capability_id: youtube** "
+            "and **query** (e.g. gospel hip hop) — delegates to **youtube_video**. Other ids run "
+            "stub **run.py** until you replace it."
+        ),
+        "parameters": {
+            "type": "OBJECT",
+            "properties": {
+                "capability_id": {
+                    "type": "STRING",
+                    "description": (
+                        "youtube | github | x | chatgpt | google_stitch | gmail | proton_mail | "
+                        "telegram | whatsapp | denalidao | parse_syntax_grammar | numbers_engine"
+                    ),
+                },
+                "query": {
+                    "type": "STRING",
+                    "description": "Search text for **youtube** play (e.g. gospel hip hop).",
+                },
+                "action": {
+                    "type": "STRING",
+                    "description": (
+                        "Optional. **youtube**: play | summarize | get_info | trending. "
+                        "**proton_mail** (run.py): open | inbox | compose. "
+                        "**parse_syntax_grammar**: analyze | pipeline | rules | suffixes | prefixes | clean | transform. "
+                        "**numbers_engine**: analyze | pipeline | spec | evidence | lexicon | math_evaluate | monad."
+                    ),
+                },
+                "url": {
+                    "type": "STRING",
+                    "description": "Optional **youtube** get_info URL, or **proton_mail** navigation override.",
+                },
+                "save": {"type": "BOOLEAN", "description": "Optional **youtube** summarize."},
+                "region": {"type": "STRING", "description": "Optional **youtube** trending region."},
+                "dry_run": {
+                    "type": "BOOLEAN",
+                    "description": "Optional. Passed to capability **run.py** scripts that support it (e.g. **proton_mail** preview).",
+                },
+                "text": {
+                    "type": "STRING",
+                    "description": "Optional. **parse_syntax_grammar**: input prose to analyze or clean. **numbers_engine**: prose for analyze/pipeline or a math expression when using math_evaluate without **expression**.",
+                },
+                "document_path": {
+                    "type": "STRING",
+                    "description": "Optional. **parse_syntax_grammar** / **numbers_engine**: absolute path to a `.txt` file to load instead of **text**.",
+                },
+                "pre_clean": {
+                    "type": "BOOLEAN",
+                    "description": "Optional. **parse_syntax_grammar** `pipeline`: run caption-style dedupe before analyze.",
+                },
+                "expression": {
+                    "type": "STRING",
+                    "description": "Optional. **numbers_engine** `math_evaluate`: arithmetic string (e.g. `4 + 4 x 4`).",
+                },
+                "mode": {
+                    "type": "STRING",
+                    "description": "Optional. **numbers_engine** `math_evaluate`: syntax_first_order (default) or standard.",
+                },
+                "numbers": {
+                    "type": "ARRAY",
+                    "description": "Optional. **numbers_engine** `monad`: numeric list for monad_profile.",
+                },
+                "section_id": {
+                    "type": "STRING",
+                    "description": "Optional. **numbers_engine** `evidence`: dotted section id from the corpus evidence index.",
+                },
+                "full": {
+                    "type": "BOOLEAN",
+                    "description": "Optional. **numbers_engine** `spec`: include full JSON spec when true.",
+                },
+            },
+            "required": ["capability_id"],
+        },
+    },
+    {
         "name": "screen_process",
         "description": (
             "Captures the monitor or **webcam** and runs vision. You have NO eyes without this tool. "
@@ -418,8 +500,9 @@ TOOL_DECLARATIONS = [
         "parameters": {
             "type": "OBJECT",
             "properties": {
-                "action":      {"type": "STRING", "description": "go_to | search | click | type | scroll | fill_form | smart_click | smart_type | get_text | get_url | press | new_tab | close_tab | screenshot | back | forward | reload | switch | list_browsers | close | close_all"},
+                "action":      {"type": "STRING", "description": "go_to | connect_cdp | search | click | type | scroll | fill_form | smart_click | smart_type | get_text | get_url | press | new_tab | close_tab | screenshot | back | forward | reload | switch | list_browsers | close | close_all"},
                 "browser":     {"type": "STRING", "description": "Target browser: chrome | edge | firefox | opera | operagx | brave | vivaldi | safari. Omit to use the currently active browser."},
+                "cdp_url":     {"type": "STRING", "description": "For connect_cdp: DevTools URL (default http://127.0.0.1:9222) when Edge/Chrome was started with --remote-debugging-port."},
                 "url":         {"type": "STRING", "description": "URL for go_to / new_tab action"},
                 "query":       {"type": "STRING", "description": "Search query for search action"},
                 "engine":      {"type": "STRING", "description": "Search engine: google | bing | duckduckgo | yandex (default: google)"},
@@ -1001,16 +1084,29 @@ def main():
 
     def runner():
         ui.wait_for_api_key()
-        if is_ollama_mode():
-            from jarvis_ollama import JarvisOllama
+        while True:
+            try:
+                if is_ollama_mode():
+                    from jarvis_ollama import JarvisOllama
 
-            jarvis = JarvisOllama(ui, TOOL_DECLARATIONS)
-        else:
-            jarvis = JarvisLive(ui)
-        try:
-            asyncio.run(jarvis.run())
-        except KeyboardInterrupt:
-            print("\n🔴 Shutting down...")
+                    jarvis = JarvisOllama(ui, TOOL_DECLARATIONS)
+                else:
+                    jarvis = JarvisLive(ui)
+                asyncio.run(jarvis.run())
+                print("[JARVIS] ℹ️ Backend run() returned; restarting in 3s…")
+            except KeyboardInterrupt:
+                print("\n🔴 Shutting down...")
+                break
+            except BaseException as e:
+                print(f"[JARVIS] ❌ Backend crashed: {type(e).__name__}: {e}")
+                traceback.print_exc()
+                try:
+                    ui.write_log(
+                        f"SYS: Backend crashed ({type(e).__name__}); restarting in 3s…"
+                    )
+                except Exception:
+                    pass
+            time.sleep(3)
 
     threading.Thread(target=runner, daemon=True).start()
     ui.root.mainloop()
@@ -1018,8 +1114,8 @@ def main():
 
 def _maybe_relaunch_for_coqui_env() -> None:
     """
-    If Coqui TTS is selected but the active conda env is not ``mark-coqui``,
-    relaunch this script under ``conda run -n mark-coqui``.
+    If **Coqui** local neural TTS is selected but the active conda env is not
+    ``mark-coqui``, relaunch this script under ``conda run -n mark-coqui``.
 
     Note: Python cannot reliably "activate" conda in-process; relaunch is robust.
     """
@@ -1063,7 +1159,7 @@ def _maybe_relaunch_for_coqui_env() -> None:
     child_env = os.environ.copy()
     child_env["MARK_SKIP_COQUI_RELAUNCH"] = "1"
     print(
-        "[TTS] Coqui is enabled and current env is not mark-coqui. "
+        "[TTS] Coqui neural TTS is enabled and current env is not mark-coqui. "
         "Relaunching under: conda run -n mark-coqui ..."
     )
     proc = subprocess.run(cmd, env=child_env)

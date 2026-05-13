@@ -394,6 +394,83 @@ def _ollama_vision_tts(text: str) -> None:
         print(f"[Vision] TTS (Ollama): {ex}")
 
 
+def analyze_screen_sync(
+    question: str,
+    *,
+    speak: bool = False,
+    timeout: int = 180,
+) -> str:
+    """
+    Capture the primary monitor once and return the vision model's text answer.
+
+    Uses **local Ollama** (vision model) when ``is_ollama_mode()``; otherwise **Gemini**
+    ``gemini-2.5-flash-lite`` if ``gemini_api_key`` is set. No chat credentials for
+    third-party sites — only what is visible on screen.
+
+    For optional spoken output, set ``speak=True`` (same TTS hook as interactive vision).
+    """
+    q = (question or "").strip()
+    if not q:
+        return ""
+
+    try:
+        image_bytes, mime_type = _capture_screen()
+    except Exception as e:
+        return f"[Vision] Screen capture failed: {e}"
+
+    b64 = base64.b64encode(image_bytes).decode("ascii")
+
+    try:
+        from mark_llm_settings import (
+            get_ollama_vision_model,
+            is_ollama_mode,
+            ollama_chat_with_image_reply,
+        )
+
+        if is_ollama_mode():
+            model = get_ollama_vision_model()
+            reply = ollama_chat_with_image_reply(
+                user_text=q,
+                image_b64=b64,
+                system=_SYSTEM_PROMPT,
+                model=model,
+                timeout=timeout,
+            )
+            out = (reply or "").strip()
+            if speak and out:
+                _ollama_vision_tts(out)
+            return out
+    except Exception as e:
+        return (
+            "[Vision] Ollama vision failed (local-only mode): "
+            f"{e}. Check `ollama list`, verify the configured vision model tag "
+            "(default `llava`), and ensure Ollama daemon is running."
+        )
+
+    key = _load_config().get("gemini_api_key", "")
+    if not (key or "").strip():
+        return (
+            "[Vision] No backend: enable local Ollama with a vision model "
+            "(e.g. llava), or set gemini_api_key for Gemini screen analysis."
+        )
+
+    try:
+        client = genai.Client(api_key=key)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-lite",
+            contents=[
+                gtypes.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                f"{_SYSTEM_PROMPT}\n\nUser question (answer from the image only):\n{q}",
+            ],
+        )
+        out = (response.text or "").strip()
+        if speak and out:
+            _ollama_vision_tts(out)
+        return out
+    except Exception as e:
+        return f"[Vision] Gemini vision failed: {e}"
+
+
 def _screen_process_ollama_worker(
     angle: str,
     user_text: str,

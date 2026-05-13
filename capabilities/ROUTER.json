@@ -1,0 +1,82 @@
+{
+  "capabilities": {
+    "youtube": {
+      "browser": "edge",
+      "start_url": "https://www.youtube.com/",
+      "delegate": "youtube_video",
+      "notes": "Voice: e.g. gospel hip hop — use run_capability with query, or youtube_video directly."
+    },
+    "github": {
+      "browser": "brave",
+      "start_url": "https://github.com/"
+    },
+    "x": {
+      "browser": "edge",
+      "start_url": "https://x.com/"
+    },
+    "chatgpt": {
+      "browser": "edge",
+      "start_url": "https://chatgpt.com/"
+    },
+    "google_stitch": {
+      "browser": "edge",
+      "start_url": "https://stitch.withgoogle.com/"
+    },
+    "gmail": {
+      "browser": "edge",
+      "start_url": "https://mail.google.com/"
+    },
+    "proton_mail": {
+      "browser": "edge",
+      "start_url": "https://mail.proton.me/u/0/inbox",
+      "navigation": "edge_then_cdp",
+      "cdp_port": 9222,
+      "cdp_connect_wait": 5.5,
+      "edge_executable": "",
+      "prelaunch_open_app": true,
+      "prelaunch_app_name": "edge",
+      "prelaunch_open_app_wait_sec": 2.5,
+      "prelaunch_url_load_wait_sec": 4.0,
+      "wait_user_close_edge_sec": 180,
+      "cdp_pass_start_url_on_command_line": false,
+      "cdp_extra_wait_after_shell_url_sec": 2.0,
+      "cdp_spawn_disable_automation_controlled": true,
+      "read_screen_settle_sec": 5,
+      "read_screen_vision_timeout_sec": 180,
+      "read_screen_default_question": "",
+      "notes": "read_screen: open_app+URL, then monitor vision (Ollama llava or gemini_api_key) — no Playwright/CDP; sign in manually in Edge (Mark never stores Proton passwords). send/compose: edge_then_cdp warm path; set prelaunch_open_app false for faster cold runs. playwright_persistent fallback for navigation only."
+    },
+    "vision_read": {
+      "browser": "desktop",
+      "start_url": "",
+      "vision_model": "llava",
+      "ollama_url": "http://127.0.0.1:11434",
+      "health_timeout_sec": 10,
+      "request_timeout_sec": 90,
+      "notes": "Standalone local-only vision capability. Actions: health | read_screen | read_camera. No third-party APIs."
+    },
+    "telegram": {
+      "browser": "desktop",
+      "start_url": "",
+      "notes": "Prefer open_app + desktop automation; optional browser if you use web Telegram."
+    },
+    "whatsapp": {
+      "browser": "brave",
+      "start_url": "https://web.whatsapp.com/"
+    },
+    "denalidao": {
+      "browser": "brave",
+      "start_url": "https://denalidao.com/"
+    },
+    "parse_syntax_grammar": {
+      "browser": "desktop",
+      "start_url": "",
+      "notes": "stdin JSON run.py: analyze | pipeline | rules | suffixes | prefixes | clean | transform. rules.json + suffixes.json + prefixes.json; experimental PSG tags only."
+    },
+    "numbers_engine": {
+      "browser": "desktop",
+      "start_url": "",
+      "notes": "stdin JSON run.py: analyze | pipeline | spec | evidence | lexicon | math_evaluate | monad. Loads data/derived/numbers_engine/quantum_cipher_engine_methods.json + optional corpus evidence index."
+    }
+  }
+}

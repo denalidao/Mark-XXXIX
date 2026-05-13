@@ -138,6 +138,28 @@ def get_ollama_request_options() -> dict:
     return out
 
 
+def get_ollama_chat_timeout_sec() -> int:
+    """
+    HTTP read timeout (seconds) for ``POST /api/chat`` when the caller does not pass
+    an explicit ``timeout`` (see ``ollama_chat``).
+
+    Default **120** (was 600 — too long to wait on a stuck local Ollama).
+
+    Override: env ``MARK_OLLAMA_CHAT_TIMEOUT`` or ``ollama_chat_timeout_sec`` in
+    ``config/api_keys.json`` (integer seconds, clamped 30–600).
+    """
+    raw = os.environ.get("MARK_OLLAMA_CHAT_TIMEOUT", "").strip()
+    if not raw:
+        cfg = _load_config().get("ollama_chat_timeout_sec")
+        if isinstance(cfg, (int, float)) and int(cfg) > 0:
+            raw = str(int(cfg))
+        elif isinstance(cfg, str) and cfg.strip().isdigit():
+            raw = cfg.strip()
+    if raw.isdigit():
+        return max(30, min(int(raw), 600))
+    return 120
+
+
 def get_ollama_vision_model() -> str:
     """
     Vision-capable Ollama tag for screen/camera tools (separate from chat model).
@@ -264,12 +286,13 @@ def get_gemini_api_key() -> str:
 
 def get_local_tts_backend() -> str:
     """
-    Local reply speech: ``pyttsx3`` (Windows SAPI), ``gemini`` (Gemini TTS), or
-    ``coqui`` (local TechGym / Coqui repo). Windows SAPI is always the fallback if
-    the primary backend fails or is not configured.
+    Local reply speech: ``pyttsx3`` (Windows SAPI), ``gemini`` (Gemini TTS),
+    or ``coqui`` (local TechGym / Coqui repo). Windows SAPI is always the fallback
+    if the primary backend fails or is not configured.
 
     ``MARK_TTS_BACKEND`` or ``tts_backend``: ``pyttsx3`` | ``gemini`` | ``google`` |
-    ``coqui`` | ``techgym``.
+    ``coqui`` | ``techgym``. Legacy ``voxcpm`` / ``voxcpm2`` values are remapped to
+    ``coqui`` (VoxCPM was removed from Mark).
     """
     v = (
         os.environ.get("MARK_TTS_BACKEND", "").strip().lower()
@@ -277,7 +300,7 @@ def get_local_tts_backend() -> str:
     )
     if v in ("gemini", "google"):
         return "gemini"
-    if v in ("coqui", "techgym"):
+    if v in ("coqui", "techgym", "voxcpm", "voxcpm2"):
         return "coqui"
     return "pyttsx3"
 
@@ -590,10 +613,12 @@ def ollama_chat(
     *,
     tools: list[dict] | None = None,
     model: str | None = None,
-    timeout: int = 600,
+    timeout: int | None = None,
 ) -> dict:
     """POST /api/chat (non-streaming). Returns parsed JSON or raises on HTTP error."""
     import requests
+
+    effective_timeout = get_ollama_chat_timeout_sec() if timeout is None else timeout
 
     url = f"{get_ollama_url()}/api/chat"
     payload: dict = {
@@ -606,7 +631,7 @@ def ollama_chat(
     opts = get_ollama_request_options()
     if opts:
         payload["options"] = opts
-    resp = requests.post(url, json=payload, timeout=timeout)
+    resp = requests.post(url, json=payload, timeout=effective_timeout)
     if not resp.ok:
         body = (resp.text or "").strip()[:1200]
         print(f"[OLLAMA] HTTP {resp.status_code} {url}\n{body}")
@@ -629,7 +654,7 @@ def ollama_generate_text(
     user_prompt: str,
     *,
     system_instruction: str | None = None,
-    timeout: int = 300,
+    timeout: int | None = None,
 ) -> str:
     """Single-turn text generation via /api/chat (no tools)."""
     messages: list[dict] = []

@@ -225,6 +225,11 @@ def _call_tool(
         from actions.youtube_video import youtube_video
         return youtube_video(parameters=parameters, player=None) or "Done."
 
+    elif tool == "run_capability":
+        import playbook_runner
+
+        return playbook_runner.run_capability(parameters, player=None) or "Done."
+
     elif tool == "weather_report":
         from actions.weather_report import weather_action
         return weather_action(parameters=parameters, player=None) or "Done."

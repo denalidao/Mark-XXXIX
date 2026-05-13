@@ -1,0 +1,213 @@
+{
+  "version": 2,
+  "description": "Line-anchored excerpts keyed to top-level and dotted paths in quantum_cipher_engine_methods.json. Canonical engine spec lives alongside this file.",
+  "canonical_spec": "data/derived/numbers_engine/quantum_cipher_engine_methods.json",
+  "sources": [
+    {
+      "id": "full_library_txt",
+      "path": "data/text/David_Wynn_Miller_Quantum_Grammar Full Library.txt"
+    },
+    {
+      "id": "seminar_transcript",
+      "path": "data/transcripts/J7-Rknkrnts_David_Wynn_Miller_Quantum_Grammar_FULL_SEMINAR.txt"
+    }
+  ],
+  "section_notes": {
+    "math_operation_modes.reversibility_test": "Numeric example in the spec is illustrative; add a precise library line citation when you locate one.",
+    "recommended_output_schema": "Implementation shape only; no verbatim source passage."
+  },
+  "evidence_by_section_id": {
+    "verification_summary": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 67402,
+        "line_end": 67408,
+        "quote": "71 NUMBER-VALUE(COUNTING): 0,1,2,3,4,5,6,7,8,9.\n~2 LETTER-VALUES:A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,1,U,V,W, X, Y, Z\n\"3 SYMBOLS: +,-,Х,-,=,1,2,0@,#,$,%,^,&,*(),>,<,~,1,[,),:\",еїс.\n~4 OPERATIONS: CORRECT: 4 + 4 X 4 = 20, [WRONG: 4 + 4 X 4 = 32]."
+      },
+      {
+        "source_id": "full_library_txt",
+        "line_start": 213,
+        "line_end": 215,
+        "quote": "FOR THE OPERATIONAL-MATH-ORDER OF THE OPERATIONS: PARENTHESE( ), MULTIPLY(x), DIVIDE(/),\nSUBTRACT(-), ADDITION(+), DIRECTION OF THE OPERATION FROM THE LEFT-TO-RIGHT."
+      },
+      {
+        "source_id": "full_library_txt",
+        "line_start": 9642,
+        "line_end": 9645,
+        "quote": "~FIRST-ORDER OF THE OPERATION = 1- MULTIPLY; 2= DIVIDE; 3= SUBTRACT; 4= ADD.\nLAW OF THE PROCEDURE, 4+4x4 = 20=CORRECT 4 + 6 = 10 /10 - 6) = 4"
+      },
+      {
+        "source_id": "full_library_txt",
+        "line_start": 9259,
+        "line_end": 9267,
+        "quote": "-***: MONAD: IS SUM AND FACTOR-COMBINATION WITH THESE CIPHER-NUMBERS WITH А CREATION OF А WHOLE-\nCONTROL THROUGH A MATH-QUANTUM.\n-***: NUMERICAL-CIPHER: IS SUB WITH A USE OF THESE NUMBERS WITH THESE LETTERS AND WORDS WITH А\nCOMPLETION OF THESE COMPLETE-THOUGHTS AND COMPLETE-SENTENCES."
+      },
+      {
+        "source_id": "full_library_txt",
+        "line_start": 62231,
+        "line_end": 62233,
+        "quote": "For the NUMERICAL-CIPHER of these NUMBERS ARE with the CLAIM of the WORD-VALUE. For this MATH\nof this SYNTAX-GRAMMAR ARE with the C.-S.-S.-C.-P.-S.-G.-P.-OPERATION-METHODS CLAIM"
+      },
+      {
+        "source_id": "full_library_txt",
+        "line_start": 61132,
+        "line_end": 61134,
+        "quote": "TO+ TOO=FOR,4+FORE=ATE."
+      },
+      {
+        "source_id": "seminar_transcript",
+        "line_start": 3887,
+        "line_end": 3888,
+        "quote": "And we identified every single word by placing a number on top of it.\nplacing a number on top of it. All 6,000 words."
+      }
+    ],
+    "core_digit_tables": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 67402,
+        "line_end": 67405,
+        "quote": "71 NUMBER-VALUE(COUNTING): 0,1,2,3,4,5,6,7,8,9.\n~2 LETTER-VALUES:A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,1,U,V,W, X, Y, Z\n\"3 SYMBOLS: +,-,Х,-,=,1,2,0@,#,$,%,^,&,*(),>,<,~,1,[,),:\",еїс."
+      }
+    ],
+    "syntax_digit_roles": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 31246,
+        "line_end": 31266,
+        "quote": "\"1 = ADVERB, 1272, 1>>1>>3<>4, 4««1, 1>>3<>4; << = MODIFIES-BEFORE\n~2 VERB, 2, 1>>2<<1>>2<<1>>2,\n^43 ADJECTIVE, 1>>3<>4, 1>>3>>3>>3>><<4,\n~4 = PRONOUN, 4, 4<1, 3>><<4 WHEN A FACT (RED) COMES BEFORE A FACT (РЕМ) WITH THE LACK OF A\nHYPHEN, FOR THE (RED) ADJECTIVE-MODIFIES>>><<<PRONOUN (РЕМ) = COLOR4<<OF1>>FACT2-DPV=FICTION\n~5 = POSITION = RULES, VOTE, OPERATIONS [PREPOSITION]\n~6 = LODIO = OWNERSHIP, ORIGINAL-TITLE. [ARTICLE]\n~7 = FACT = THING, 3-D, PLACE, PERSON. [NOUN=NO-NO]\n~8 = PAST-TIME-TENSE, VOID-NOW-TIME. FROM, ED\n~9 = FUTURE-TIME-TENSE, VOID OF ALL-FACT. TO, PRE\n40 = CONJUNCTION = AND/OR"
+      },
+      {
+        "source_id": "full_library_txt",
+        "line_start": 101140,
+        "line_end": 101145,
+        "quote": "FOR THE SYNTAXING OF THE FICTIONAL-COURT-PAPERS IS WITH THE NUMBER-KEY-CODES:\n1=ADVERB-MODIFIER; 2=VERB-NOUN-FRAUD; 3=ADJECTIVE-MODIFIER-COLORING-OPINION;\n4=PRONOUN(NO-NO-NO); 5=POSITION = ALPHABET-LETTERS, WORD-SPELLINGS, DEFINITION-\nTERMS AND OPERATIONS; 6=LODIAL=OWNERSHIP OF THE MATTER, EQUITY; 7=FACT-CONTRACT-\nOPERATIONS OF THE 1-IN-900-TERM-PHRASES-PER=WORD; 8=PAST-TIME-TENSE; 9=FUTURE-TIME-\nTENSE=FICTION; 0ZCONJUNCTION-AND-COMMAND, OR-OPTION."
+      }
+    ],
+    "numbering_code_terms": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 9632,
+        "line_end": 9634,
+        "quote": "5 6 7 5 6 7 2 5 6 7 5 6 7 5 6 7 \nFOR THE TRUST WITH THE AUTHORITY IS FOR THE WRITING OF THE CHECKS BY THE TRUSTEE. [BACKWARDS]"
+      },
+      {
+        "source_id": "full_library_txt",
+        "line_start": 10862,
+        "line_end": 10870,
+        "quote": "^5. = PREPOSITION = 5-6-7, FOR, WITH, OF, BY, AGAINST, IN, ON, NOW-TIME\n^6. = ARTICLE = 5-6-7, A, AN, ANY, ALL, THE, THIS, THAT, THOSE, THEM, OTHER, HIS, HER, NOW-TIME;\nNOUN = 5-6-7 = FACT, SUBJECT-MATTER, IN THE TRUTH."
+      }
+    ],
+    "math_operation_modes.syntax_first_order": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 9642,
+        "line_end": 9645,
+        "quote": "MATTER, FACT, NOUN= 4+ 4x 4 = 32=WRONG 4 +6 = 10110 -6 = 4\n~FIRST-ORDER OF THE OPERATION = 1- MULTIPLY; 2= DIVIDE; 3= SUBTRACT; 4= ADD.\nLAW OF THE PROCEDURE, 4+4x4 = 20=CORRECT 4 + 6 = 10 /10 - 6) = 4"
+      }
+    ],
+    "math_operation_modes.standard_math_order_as_documented": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 213,
+        "line_end": 215,
+        "quote": "FOR THE OPERATIONAL-MATH-ORDER OF THE OPERATIONS: PARENTHESE( ), MULTIPLY(x), DIVIDE(/),\nSUBTRACT(-), ADDITION(+), DIRECTION OF THE OPERATION FROM THE LEFT-TO-RIGHT."
+      }
+    ],
+    "math_operation_modes.reversibility_test": [],
+    "word_value_methods.numerical_cipher": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 62231,
+        "line_end": 62234,
+        "quote": "For the NUMERICAL-CIPHER of these NUMBERS ARE with the CLAIM of the WORD-VALUE. For this MATH\nof this SYNTAX-GRAMMAR ARE with the C.-S.-S.-C.-P.-S.-G.-P.-OPERATION-METHODS CLAIM with the\nCORRECT-DEFINITION of the WORD: 5,6,7,5,6,7,2,5,6,7,5,6,7, with each CORRECT-SENTENCE-"
+      },
+      {
+        "source_id": "full_library_txt",
+        "line_start": 9266,
+        "line_end": 9267,
+        "quote": "-***: NUMERICAL-CIPHER: IS SUB WITH A USE OF THESE NUMBERS WITH THESE LETTERS AND WORDS WITH А\nCOMPLETION OF THESE COMPLETE-THOUGHTS AND COMPLETE-SENTENCES."
+      }
+    ],
+    "word_value_methods.monad": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 9259,
+        "line_end": 9260,
+        "quote": "-***: MONAD: IS SUM AND FACTOR-COMBINATION WITH THESE CIPHER-NUMBERS WITH А CREATION OF А WHOLE-\nCONTROL THROUGH A MATH-QUANTUM."
+      },
+      {
+        "source_id": "full_library_txt",
+        "line_start": 78731,
+        "line_end": 78733,
+        "quote": "714: MONAD IS WITH THIS CLAIM OF THIS UNITY WITH THIS SUM AND FACTORS OF ANY\nCOMBINATION WITH THESE CIPHER-NUMBERS FOR THIS CREATION OF THIS WHOLE WITH THIS\nCONTROL THROUGH THIS MATH-QUANTUM BY THIS CLAIM."
+      }
+    ],
+    "word_value_methods.word_value": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 11,
+        "line_end": 11,
+        "quote": "WITH EACH WORD-VALUE OF EACH"
+      }
+    ],
+    "homophone_math_methods": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 61132,
+        "line_end": 61134,
+        "quote": "~23 For the (3+3=6) as the FACT IS with the CORRECT-MATH-CLAIM of the FACTS &: \"FICTION-WILL 1\nСКЕАТЕ2\"ТНЕ1 WRONG3 ANSWER4\". ... TO+ TOO=FOR,4+FORE=ATE."
+      },
+      {
+        "source_id": "full_library_txt",
+        "line_start": 65912,
+        "line_end": 65915,
+        "quote": "Through the Postal 2+2=4, TOO + TO = FOR, 150 WAYS,\n= Traps Filing 4+4=8, FOR + FOUR = ATE 12 WAYS FOR THIS SOUND"
+      }
+    ],
+    "time_and_position_cipher_rules": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 9636,
+        "line_end": 9639,
+        "quote": "\"TO\" IS FUTURE-TENSE, NO AUTHORITY-JURISDICTION OF THE NOW-TENSE-DAMAGE\n\"FROM\" IS PAST-TENSE NO AUTHORITY-JURISDICTION OF THE NOW-TENSE-DAMAGE\n\"OVER\" AND \"UNDER\" ARE WITH THE DIMENTION OF A DIFFERENT PLANE"
+      },
+      {
+        "source_id": "full_library_txt",
+        "line_start": 9289,
+        "line_end": 9290,
+        "quote": "-***: POSITION: IS POSITIONAL-WORD-COMMUNICATION-STRUCTURE: THROUGH, IN, WITHIN, BY, OF, FOR, WITH\nARE WITH A NOW-TENSE-TIME WITH THE AUTHORITY, OF A CLAIM-NOW-TIME-AUTHORITY."
+      },
+      {
+        "source_id": "full_library_txt",
+        "line_start": 67439,
+        "line_end": 67444,
+        "quote": "~9TO=FUTURE-TENSE AND FROM=PAST-TENSE, ARE WITHTHE VOID IN THE NOW-TIME-TENSE. FOR\nTHE RULES OF THE ONE-IDEA-SENTENCE ARE WITH THE CLAIM OF THE ONE-TIME-TENSE WITH\nEACH-SENTENCE. FOR THE CORRECT-CONDITION-STATE OF THE MIND ARE WITH THE STUDYING\nOF THE MATH-OPERATIONS ARE WITH THE NOW-TIME-JURISDICTION-MATH OVER THE MAN/"
+      }
+    ],
+    "directional_syntax": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 31236,
+        "line_end": 31238,
+        "quote": "FOR THE NUMBERING OF THE WORD IS WITH THE VASSALEE' S-DOCUMENT-EVIDENCE-CLAIM OF THE\nCLOSURE WITH EACH MODIFICATION-OPERATION: 1>2, 1>3<>4, 3>3<>4, 4<1><1<>3<>4, 4<1>2,\n4<1>3<>4, ОҒ ТНЕ EVIDENCE-FICTIONAL-WORD-DOCUMENT"
+      }
+    ],
+    "void_and_omission_symbols": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 6857,
+        "line_end": 6866,
+        "quote": "1.9 2 1 2 1 2 1 2 1 DPV2 = (1*ADVERB) (2*VERB) (9*FUTURE-TENSE)\n...\n(5*PREPOSITION) (6*ARTICLE) (7*NOUN) (2*VERB) [WEBSTER (1828) ]"
+      }
+    ],
+    "engine_pipeline": [
+      {
+        "source_id": "full_library_txt",
+        "line_start": 67402,
+        "line_end": 67405,
+        "quote": "71 NUMBER-VALUE(COUNTING): 0,1,2,3,4,5,6,7,8,9.\n~2 LETTER-VALUES:A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,1,U,V,W, X, Y, Z\n\"3 SYMBOLS: +,-,Х,-,=,1,2,0@,#,$,%,^,&,*(),>,<,~,1,[,),:\",еїс."
+      }
+    ],
+    "recommended_output_schema": []
+  }
+}

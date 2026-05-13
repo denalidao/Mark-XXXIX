@@ -1,0 +1,1152 @@
+{
+  "metadata": {
+    "title": "Quantum Parse Syntax Prefix Engine",
+    "version": "1.0",
+    "purpose": "Core negation, motion, reversal, jurisdiction, position, and contract-bias prefix module for an experimental Quantum Parse Syntax parser.",
+    "note": "This is an experimental symbolic parsing framework. These meanings are not standard linguistics, law, or accepted etymology."
+  },
+  "rule_groups": {
+    "negation": "prefixes interpreted as no, not, without, absence, reversal, denial, or nullification",
+    "motion": "prefixes interpreted as movement, direction, displacement, transfer, or action",
+    "position": "prefixes interpreted as before, after, under, over, around, within, outside, or between",
+    "contract_bias": "prefixes interpreted as creating, weakening, reversing, or conditioning a contractual state",
+    "jurisdiction": "prefixes interpreted as status, authority, domain, court, vessel, or administrative control"
+  },
+  "prefixes": [
+    {
+      "prefix": "a",
+      "class": [
+        "negation",
+        "absence"
+      ],
+      "claimed_meaning": "no, without, absence of, not in possession of",
+      "examples": [
+        "amoral",
+        "apolitical",
+        "atypical",
+        "again"
+      ]
+    },
+    {
+      "prefix": "ab",
+      "class": [
+        "motion",
+        "separation"
+      ],
+      "claimed_meaning": "away from, off, separated from",
+      "examples": [
+        "abduct",
+        "abnormal",
+        "absent"
+      ]
+    },
+    {
+      "prefix": "abs",
+      "class": [
+        "motion",
+        "separation"
+      ],
+      "claimed_meaning": "away, removed, standing apart",
+      "examples": [
+        "abstract",
+        "abscond"
+      ]
+    },
+    {
+      "prefix": "ad",
+      "class": [
+        "motion"
+      ],
+      "claimed_meaning": "toward, added to, moved into contact",
+      "examples": [
+        "advance",
+        "adhere",
+        "adjoin"
+      ]
+    },
+    {
+      "prefix": "af",
+      "class": [
+        "motion"
+      ],
+      "claimed_meaning": "toward or into, assimilated form of ad",
+      "examples": [
+        "affix",
+        "affirm"
+      ]
+    },
+    {
+      "prefix": "ag",
+      "class": [
+        "motion"
+      ],
+      "claimed_meaning": "toward or into, assimilated form of ad",
+      "examples": [
+        "aggravate"
+      ]
+    },
+    {
+      "prefix": "al",
+      "class": [
+        "motion",
+        "contract_bias"
+      ],
+      "claimed_meaning": "toward or into, assimilated form; also all/whole condition",
+      "examples": [
+        "allocate",
+        "allot"
+      ]
+    },
+    {
+      "prefix": "an",
+      "class": [
+        "negation",
+        "absence"
+      ],
+      "claimed_meaning": "no, without, absence of",
+      "examples": [
+        "anarchy",
+        "anonymous",
+        "anomalous"
+      ]
+    },
+    {
+      "prefix": "ana",
+      "class": [
+        "motion"
+      ],
+      "claimed_meaning": "up, back, again, through repetition",
+      "examples": [
+        "analyze",
+        "anatomy"
+      ]
+    },
+    {
+      "prefix": "ante",
+      "class": [
+        "position"
+      ],
+      "claimed_meaning": "before, prior position, pre-condition",
+      "examples": [
+        "antecedent",
+        "antedate"
+      ]
+    },
+    {
+      "prefix": "anti",
+      "class": [
+        "negation",
+        "opposition"
+      ],
+      "claimed_meaning": "against, opposed to, counter-contract",
+      "examples": [
+        "antibody",
+        "antitrust",
+        "antiwar"
+      ]
+    },
+    {
+      "prefix": "apo",
+      "class": [
+        "motion",
+        "separation"
+      ],
+      "claimed_meaning": "away from, detached from",
+      "examples": [
+        "apology",
+        "apostasy"
+      ]
+    },
+    {
+      "prefix": "arch",
+      "class": [
+        "jurisdiction"
+      ],
+      "claimed_meaning": "chief, ruler, origin authority",
+      "examples": [
+        "archbishop",
+        "archangel",
+        "archive"
+      ]
+    },
+    {
+      "prefix": "auto",
+      "class": [
+        "jurisdiction",
+        "self"
+      ],
+      "claimed_meaning": "self, self-moving, self-authorizing",
+      "examples": [
+        "autograph",
+        "autonomy",
+        "automatic"
+      ]
+    },
+    {
+      "prefix": "be",
+      "class": [
+        "motion",
+        "state"
+      ],
+      "claimed_meaning": "to make, cause, cover, bring into state",
+      "examples": [
+        "become",
+        "belittle",
+        "befriend"
+      ]
+    },
+    {
+      "prefix": "bene",
+      "class": [
+        "position",
+        "benefit"
+      ],
+      "claimed_meaning": "good, well, favorable condition",
+      "examples": [
+        "benefit",
+        "benevolent"
+      ]
+    },
+    {
+      "prefix": "bi",
+      "class": [
+        "division",
+        "duality"
+      ],
+      "claimed_meaning": "two, split, dual condition",
+      "examples": [
+        "bicycle",
+        "bilateral"
+      ]
+    },
+    {
+      "prefix": "by",
+      "class": [
+        "position",
+        "agency"
+      ],
+      "claimed_meaning": "near, beside, agency of action",
+      "examples": [
+        "bypass",
+        "bylaw"
+      ]
+    },
+    {
+      "prefix": "circum",
+      "class": [
+        "motion",
+        "position"
+      ],
+      "claimed_meaning": "around, encircling jurisdiction",
+      "examples": [
+        "circumstance",
+        "circumvent"
+      ]
+    },
+    {
+      "prefix": "co",
+      "class": [
+        "contract_bias",
+        "joining"
+      ],
+      "claimed_meaning": "with, together, joint contract",
+      "examples": [
+        "cooperate",
+        "coauthor"
+      ]
+    },
+    {
+      "prefix": "col",
+      "class": [
+        "contract_bias",
+        "joining"
+      ],
+      "claimed_meaning": "with, together, assimilated form of con",
+      "examples": [
+        "collect",
+        "collateral"
+      ]
+    },
+    {
+      "prefix": "com",
+      "class": [
+        "contract_bias",
+        "joining"
+      ],
+      "claimed_meaning": "with, together, commercial joining",
+      "examples": [
+        "commerce",
+        "combine",
+        "compact"
+      ]
+    },
+    {
+      "prefix": "con",
+      "class": [
+        "contract_bias",
+        "joining"
+      ],
+      "claimed_meaning": "with, together, bind/draw together",
+      "examples": [
+        "contract",
+        "consent",
+        "condition"
+      ]
+    },
+    {
+      "prefix": "contra",
+      "class": [
+        "negation",
+        "opposition"
+      ],
+      "claimed_meaning": "against, opposed, counter-position",
+      "examples": [
+        "contradict",
+        "contraband"
+      ]
+    },
+    {
+      "prefix": "counter",
+      "class": [
+        "negation",
+        "opposition"
+      ],
+      "claimed_meaning": "against, opposite action, reversal response",
+      "examples": [
+        "counterclaim",
+        "counteract"
+      ]
+    },
+    {
+      "prefix": "de",
+      "class": [
+        "negation",
+        "reversal",
+        "contract_bias"
+      ],
+      "claimed_meaning": "undo, remove, down from, reverse, no contract",
+      "examples": [
+        "declassify",
+        "defendant",
+        "destroy"
+      ]
+    },
+    {
+      "prefix": "demi",
+      "class": [
+        "division"
+      ],
+      "claimed_meaning": "half, partial, incomplete state",
+      "examples": [
+        "demigod",
+        "demitasse"
+      ]
+    },
+    {
+      "prefix": "dia",
+      "class": [
+        "motion"
+      ],
+      "claimed_meaning": "through, across, passing between",
+      "examples": [
+        "diagram",
+        "diagnosis"
+      ]
+    },
+    {
+      "prefix": "dif",
+      "class": [
+        "separation",
+        "negation"
+      ],
+      "claimed_meaning": "apart, away, not same",
+      "examples": [
+        "differ"
+      ]
+    },
+    {
+      "prefix": "dis",
+      "class": [
+        "negation",
+        "separation",
+        "reversal"
+      ],
+      "claimed_meaning": "apart, away, reverse, trickery/separation, negated condition",
+      "examples": [
+        "district",
+        "discharge",
+        "disable"
+      ]
+    },
+    {
+      "prefix": "dys",
+      "class": [
+        "negation",
+        "defect"
+      ],
+      "claimed_meaning": "bad, difficult, impaired state",
+      "examples": [
+        "dysfunction",
+        "dyslexia"
+      ]
+    },
+    {
+      "prefix": "e",
+      "class": [
+        "motion",
+        "vowel_negation"
+      ],
+      "claimed_meaning": "out, from, vowel-start negation bias",
+      "examples": [
+        "emit",
+        "eject"
+      ]
+    },
+    {
+      "prefix": "ec",
+      "class": [
+        "motion"
+      ],
+      "claimed_meaning": "out from, away from",
+      "examples": [
+        "eccentric"
+      ]
+    },
+    {
+      "prefix": "ef",
+      "class": [
+        "motion"
+      ],
+      "claimed_meaning": "out from, assimilated form of ex",
+      "examples": [
+        "effect"
+      ]
+    },
+    {
+      "prefix": "em",
+      "class": [
+        "motion",
+        "state"
+      ],
+      "claimed_meaning": "put into, cause to be in state",
+      "examples": [
+        "empower",
+        "embody"
+      ]
+    },
+    {
+      "prefix": "en",
+      "class": [
+        "motion",
+        "state"
+      ],
+      "claimed_meaning": "put into, cause to enter condition",
+      "examples": [
+        "enable",
+        "enforce",
+        "enclose"
+      ]
+    },
+    {
+      "prefix": "endo",
+      "class": [
+        "position"
+      ],
+      "claimed_meaning": "inside, within",
+      "examples": [
+        "endogenous",
+        "endoscope"
+      ]
+    },
+    {
+      "prefix": "epi",
+      "class": [
+        "position"
+      ],
+      "claimed_meaning": "upon, over, after, added layer",
+      "examples": [
+        "epicenter",
+        "epigraph"
+      ]
+    },
+    {
+      "prefix": "ex",
+      "class": [
+        "motion",
+        "separation"
+      ],
+      "claimed_meaning": "out of, from, former, removed from",
+      "examples": [
+        "exit",
+        "exclude",
+        "ex-president"
+      ]
+    },
+    {
+      "prefix": "extra",
+      "class": [
+        "position",
+        "separation"
+      ],
+      "claimed_meaning": "outside, beyond, exceeding jurisdiction",
+      "examples": [
+        "extralegal",
+        "extraordinary"
+      ]
+    },
+    {
+      "prefix": "fore",
+      "class": [
+        "position"
+      ],
+      "claimed_meaning": "before, front, prior notice",
+      "examples": [
+        "foreclose",
+        "forecast"
+      ]
+    },
+    {
+      "prefix": "for",
+      "class": [
+        "position",
+        "contract_bias"
+      ],
+      "claimed_meaning": "toward purpose; in Miller-style examples often a factual-position anchor",
+      "examples": [
+        "forgive",
+        "forsake"
+      ]
+    },
+    {
+      "prefix": "hyper",
+      "class": [
+        "position",
+        "excess"
+      ],
+      "claimed_meaning": "over, beyond, excessive",
+      "examples": [
+        "hyperactive",
+        "hyperlink"
+      ]
+    },
+    {
+      "prefix": "hypo",
+      "class": [
+        "position"
+      ],
+      "claimed_meaning": "under, beneath, lesser condition",
+      "examples": [
+        "hypothesis",
+        "hypodermic"
+      ]
+    },
+    {
+      "prefix": "i",
+      "class": [
+        "vowel_negation"
+      ],
+      "claimed_meaning": "vowel-start no-contract bias",
+      "examples": [
+        "illusion",
+        "imagination"
+      ]
+    },
+    {
+      "prefix": "il",
+      "class": [
+        "negation"
+      ],
+      "claimed_meaning": "not, no, assimilated form of in",
+      "examples": [
+        "illegal",
+        "illogical"
+      ]
+    },
+    {
+      "prefix": "im",
+      "class": [
+        "negation"
+      ],
+      "claimed_meaning": "not, no, absence, impossible state",
+      "examples": [
+        "impossible",
+        "immoral"
+      ]
+    },
+    {
+      "prefix": "in",
+      "class": [
+        "negation",
+        "motion",
+        "position"
+      ],
+      "claimed_meaning": "not; also into/within depending context",
+      "examples": [
+        "invalid",
+        "inside",
+        "incorporate"
+      ]
+    },
+    {
+      "prefix": "infra",
+      "class": [
+        "position"
+      ],
+      "claimed_meaning": "below, beneath jurisdiction",
+      "examples": [
+        "infrastructure",
+        "infrasonic"
+      ]
+    },
+    {
+      "prefix": "inter",
+      "class": [
+        "position",
+        "motion"
+      ],
+      "claimed_meaning": "between, among, reciprocal movement",
+      "examples": [
+        "international",
+        "interstate"
+      ]
+    },
+    {
+      "prefix": "intra",
+      "class": [
+        "position"
+      ],
+      "claimed_meaning": "within, inside same domain",
+      "examples": [
+        "intrastate",
+        "intramural"
+      ]
+    },
+    {
+      "prefix": "ir",
+      "class": [
+        "negation"
+      ],
+      "claimed_meaning": "not, no, assimilated form of in",
+      "examples": [
+        "irregular",
+        "irresponsible"
+      ]
+    },
+    {
+      "prefix": "iso",
+      "class": [
+        "position",
+        "equivalence"
+      ],
+      "claimed_meaning": "same, equal condition",
+      "examples": [
+        "isometric",
+        "isotope"
+      ]
+    },
+    {
+      "prefix": "mal",
+      "class": [
+        "negation",
+        "defect"
+      ],
+      "claimed_meaning": "bad, wrong, defective",
+      "examples": [
+        "malpractice",
+        "malfunction"
+      ]
+    },
+    {
+      "prefix": "meta",
+      "class": [
+        "motion",
+        "position"
+      ],
+      "claimed_meaning": "beyond, after, change of state",
+      "examples": [
+        "metaphysics",
+        "metadata"
+      ]
+    },
+    {
+      "prefix": "mis",
+      "class": [
+        "negation",
+        "error"
+      ],
+      "claimed_meaning": "wrong, bad, mistaken, defective action",
+      "examples": [
+        "mislead",
+        "misstate"
+      ]
+    },
+    {
+      "prefix": "mono",
+      "class": [
+        "singularity"
+      ],
+      "claimed_meaning": "one, single condition",
+      "examples": [
+        "monopoly",
+        "monologue"
+      ]
+    },
+    {
+      "prefix": "multi",
+      "class": [
+        "plurality"
+      ],
+      "claimed_meaning": "many, multiple conditions",
+      "examples": [
+        "multilateral",
+        "multiform"
+      ]
+    },
+    {
+      "prefix": "neo",
+      "class": [
+        "state"
+      ],
+      "claimed_meaning": "new, renewed condition",
+      "examples": [
+        "neoclassical",
+        "neonate"
+      ]
+    },
+    {
+      "prefix": "non",
+      "class": [
+        "negation"
+      ],
+      "claimed_meaning": "not, without, no status",
+      "examples": [
+        "nonresident",
+        "nonfiction"
+      ]
+    },
+    {
+      "prefix": "ob",
+      "class": [
+        "motion",
+        "opposition"
+      ],
+      "claimed_meaning": "against, toward, in the way of",
+      "examples": [
+        "object",
+        "obstruct"
+      ]
+    },
+    {
+      "prefix": "oc",
+      "class": [
+        "motion",
+        "opposition"
+      ],
+      "claimed_meaning": "against/toward, assimilated form of ob",
+      "examples": [
+        "occupy",
+        "occur"
+      ]
+    },
+    {
+      "prefix": "of",
+      "class": [
+        "connector",
+        "contract_bias"
+      ],
+      "claimed_meaning": "connector; in transcript treated as modifier/adverb affecting following word",
+      "examples": [
+        "of law",
+        "of worlds"
+      ]
+    },
+    {
+      "prefix": "o",
+      "class": [
+        "vowel_negation",
+        "negation"
+      ],
+      "claimed_meaning": "no, vowel-start no-contract marker",
+      "examples": [
+        "opinion",
+        "operation"
+      ]
+    },
+    {
+      "prefix": "off",
+      "class": [
+        "separation",
+        "negation"
+      ],
+      "claimed_meaning": "away, removed, disconnected",
+      "examples": [
+        "offset",
+        "offshore"
+      ]
+    },
+    {
+      "prefix": "omni",
+      "class": [
+        "jurisdiction",
+        "totality"
+      ],
+      "claimed_meaning": "all, every, total domain",
+      "examples": [
+        "omnibus",
+        "omnipresent"
+      ]
+    },
+    {
+      "prefix": "out",
+      "class": [
+        "motion",
+        "separation"
+      ],
+      "claimed_meaning": "outside, beyond, away from",
+      "examples": [
+        "outlaw",
+        "outbound"
+      ]
+    },
+    {
+      "prefix": "over",
+      "class": [
+        "position",
+        "jurisdiction"
+      ],
+      "claimed_meaning": "above, superior position, excess",
+      "examples": [
+        "overrule",
+        "oversee"
+      ]
+    },
+    {
+      "prefix": "para",
+      "class": [
+        "position",
+        "motion"
+      ],
+      "claimed_meaning": "beside, beyond, altered parallel state",
+      "examples": [
+        "parallel",
+        "paralegal"
+      ]
+    },
+    {
+      "prefix": "peri",
+      "class": [
+        "position"
+      ],
+      "claimed_meaning": "around, enclosing boundary",
+      "examples": [
+        "perimeter",
+        "periscope"
+      ]
+    },
+    {
+      "prefix": "per",
+      "class": [
+        "motion",
+        "jurisdiction"
+      ],
+      "claimed_meaning": "through, by means of, per-condition",
+      "examples": [
+        "person",
+        "permit",
+        "perform"
+      ]
+    },
+    {
+      "prefix": "post",
+      "class": [
+        "position"
+      ],
+      "claimed_meaning": "after, later condition",
+      "examples": [
+        "postdate",
+        "postscript"
+      ]
+    },
+    {
+      "prefix": "pre",
+      "class": [
+        "position",
+        "negation"
+      ],
+      "claimed_meaning": "before; in transcript often treated as no/pre-state not yet actualized",
+      "examples": [
+        "president",
+        "pretrial"
+      ]
+    },
+    {
+      "prefix": "pro",
+      "class": [
+        "motion",
+        "position"
+      ],
+      "claimed_meaning": "forward, for, in favor of",
+      "examples": [
+        "proceed",
+        "provide"
+      ]
+    },
+    {
+      "prefix": "proto",
+      "class": [
+        "position",
+        "origin"
+      ],
+      "claimed_meaning": "first, original, initial condition",
+      "examples": [
+        "prototype",
+        "protocol"
+      ]
+    },
+    {
+      "prefix": "re",
+      "class": [
+        "motion",
+        "repetition"
+      ],
+      "claimed_meaning": "again, back, repeated action",
+      "examples": [
+        "return",
+        "register",
+        "review"
+      ]
+    },
+    {
+      "prefix": "retro",
+      "class": [
+        "motion",
+        "position"
+      ],
+      "claimed_meaning": "backward, behind, past-oriented",
+      "examples": [
+        "retroactive",
+        "retrospect"
+      ]
+    },
+    {
+      "prefix": "semi",
+      "class": [
+        "division"
+      ],
+      "claimed_meaning": "half, partial condition",
+      "examples": [
+        "semicircle",
+        "semifinal"
+      ]
+    },
+    {
+      "prefix": "sub",
+      "class": [
+        "position",
+        "jurisdiction"
+      ],
+      "claimed_meaning": "under, below, subordinate",
+      "examples": [
+        "subject",
+        "subcontract"
+      ]
+    },
+    {
+      "prefix": "suc",
+      "class": [
+        "position"
+      ],
+      "claimed_meaning": "under/after, assimilated form of sub",
+      "examples": [
+        "succeed"
+      ]
+    },
+    {
+      "prefix": "suf",
+      "class": [
+        "position"
+      ],
+      "claimed_meaning": "under, assimilated form of sub",
+      "examples": [
+        "suffer",
+        "suffix"
+      ]
+    },
+    {
+      "prefix": "sup",
+      "class": [
+        "position"
+      ],
+      "claimed_meaning": "under/up to, assimilated form of sub/super depending word",
+      "examples": [
+        "support",
+        "supply"
+      ]
+    },
+    {
+      "prefix": "super",
+      "class": [
+        "position",
+        "jurisdiction"
+      ],
+      "claimed_meaning": "above, over, superior authority",
+      "examples": [
+        "superior",
+        "supervise"
+      ]
+    },
+    {
+      "prefix": "supra",
+      "class": [
+        "position",
+        "jurisdiction"
+      ],
+      "claimed_meaning": "above, higher jurisdiction",
+      "examples": [
+        "supranational",
+        "supraliminal"
+      ]
+    },
+    {
+      "prefix": "sur",
+      "class": [
+        "position"
+      ],
+      "claimed_meaning": "over, above, beyond",
+      "examples": [
+        "surface",
+        "surcharge"
+      ]
+    },
+    {
+      "prefix": "syn",
+      "class": [
+        "contract_bias",
+        "joining"
+      ],
+      "claimed_meaning": "together, with, joined condition",
+      "examples": [
+        "syntax",
+        "synthesis"
+      ]
+    },
+    {
+      "prefix": "sym",
+      "class": [
+        "contract_bias",
+        "joining"
+      ],
+      "claimed_meaning": "together, with, assimilated form of syn",
+      "examples": [
+        "symbol",
+        "symmetry"
+      ]
+    },
+    {
+      "prefix": "trans",
+      "class": [
+        "motion"
+      ],
+      "claimed_meaning": "across, beyond, through transfer",
+      "examples": [
+        "transfer",
+        "transport",
+        "transaction"
+      ]
+    },
+    {
+      "prefix": "tri",
+      "class": [
+        "plurality"
+      ],
+      "claimed_meaning": "three, triangular condition",
+      "examples": [
+        "tribunal",
+        "trinity"
+      ]
+    },
+    {
+      "prefix": "ultra",
+      "class": [
+        "position",
+        "excess"
+      ],
+      "claimed_meaning": "beyond, exceeding limit",
+      "examples": [
+        "ultraviolet",
+        "ultramodern"
+      ]
+    },
+    {
+      "prefix": "un",
+      "class": [
+        "negation"
+      ],
+      "claimed_meaning": "no, not, reverse, undo",
+      "examples": [
+        "unlawful",
+        "unknown",
+        "united"
+      ]
+    },
+    {
+      "prefix": "under",
+      "class": [
+        "position",
+        "jurisdiction"
+      ],
+      "claimed_meaning": "beneath, subordinate, below authority",
+      "examples": [
+        "understand",
+        "undertaking"
+      ]
+    },
+    {
+      "prefix": "up",
+      "class": [
+        "motion",
+        "position"
+      ],
+      "claimed_meaning": "upward, raised condition",
+      "examples": [
+        "uphold",
+        "upgrade"
+      ]
+    },
+    {
+      "prefix": "with",
+      "class": [
+        "contract_bias",
+        "joining"
+      ],
+      "claimed_meaning": "together, accompanying, factual relation when used as anchor",
+      "examples": [
+        "withhold",
+        "within"
+      ]
+    },
+    {
+      "prefix": "without",
+      "class": [
+        "negation",
+        "absence"
+      ],
+      "claimed_meaning": "outside of, lacking, no possession",
+      "examples": [
+        "without"
+      ]
+    },
+    {
+      "prefix": "xeno",
+      "class": [
+        "separation",
+        "foreign"
+      ],
+      "claimed_meaning": "foreign, stranger, outside jurisdiction",
+      "examples": [
+        "xenophobia",
+        "xenolith"
+      ]
+    }
+  ]
+}

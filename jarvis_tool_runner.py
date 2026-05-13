@@ -29,9 +29,13 @@ from actions.weather_report import weather_action
 from actions.web_search import web_search as web_search_action
 from actions.youtube_video import youtube_video
 
+import playbook_runner
 
 SpeakFn = Callable[[str], None]
 SpeakErrFn = Callable[[str, str], None]
+
+# Console preview only; full tool payloads still go back to the LLM unchanged.
+_TOOL_RESULT_LOG_CHARS = 400
 
 
 def user_text_implies_external_messaging(user_text: str | None) -> bool:
@@ -66,6 +70,33 @@ def user_text_implies_external_messaging(user_text: str | None) -> bool:
     if re.search(r"(?i)\bdm\b", t):
         return True
     if re.search(r"(?i)\b(text|ping)\s+(?:him|her|them)\s+on\b", t):
+        return True
+    # Webmail / email outbound (Proton, Gmail, …) — not covered by SMS/WhatsApp patterns above.
+    if re.search(r"(?i)\b(send|fire|write|compose)\b.*\b(email|e-mail)\b", t):
+        return True
+    if re.search(r"(?i)\b(email|e-mail)\b.*\bto\b", t) and (
+        "@" in t
+        or re.search(
+            r"(?i)\b[\w.+-]+@(gmail|outlook|yahoo|hotmail|icloud|proton)\.",
+            t,
+        )
+    ):
+        return True
+    if re.search(r"(?i)\bsend\b.*@", t):
+        return True
+    if re.search(
+        r"(?i)\b("
+        r"proton\s*mail|protonmail|gmail|google\s+mail|outlook|hotmail|yahoo(?:mail)?|icloud"
+        r")\b.*\b(send|compose|email|write|mail)\b",
+        t,
+    ):
+        return True
+    if re.search(
+        r"(?i)\b(send|compose|email|write|mail)\b.*\b("
+        r"proton\s*mail|protonmail|gmail|google\s+mail|outlook|hotmail|yahoo|icloud"
+        r")\b",
+        t,
+    ):
         return True
     return False
 
@@ -338,12 +369,52 @@ async def run_jarvis_tool(
 
     try:
         if name == "open_app":
-            r = await loop.run_in_executor(
-                None, lambda: open_app(parameters=args, response=None, player=ui)
-            )
-            result = (r or f"Opened {args.get('app_name')}.") + _open_app_compose_followup_hint(
-                user_query, str(args.get("app_name", ""))
-            )
+            uq = (user_query or "").strip() if user_query else ""
+            app_name_l = str(args.get("app_name", "")).strip().lower()
+            if uq and user_text_requests_proton_read_screen(uq) and "proton" in app_name_l:
+                if hasattr(ui, "write_log"):
+                    ui.write_log(
+                        "SYS: Rerouting open_app(Proton...) -> run_capability(proton_mail/open_native) (simple open-first flow)."
+                    )
+                r = await loop.run_in_executor(
+                    None,
+                    lambda: playbook_runner.run_capability(
+                        {
+                            "capability_id": "proton_mail",
+                            "action": "open_native",
+                        },
+                        player=ui,
+                    ),
+                )
+                result = r or "Done."
+            elif (
+                uq
+                and user_text_requests_proton_open(uq)
+                and user_text_mentions_browser(uq)
+                and "proton" in app_name_l
+            ):
+                if hasattr(ui, "write_log"):
+                    ui.write_log(
+                        "SYS: Rerouting open_app(Proton app) -> run_capability(proton_mail/open_native) because browser was requested."
+                    )
+                r = await loop.run_in_executor(
+                    None,
+                    lambda: playbook_runner.run_capability(
+                        {
+                            "capability_id": "proton_mail",
+                            "action": "open_native",
+                        },
+                        player=ui,
+                    ),
+                )
+                result = r or "Done."
+            else:
+                r = await loop.run_in_executor(
+                    None, lambda: open_app(parameters=args, response=None, player=ui)
+                )
+                result = (r or f"Opened {args.get('app_name')}.") + _open_app_compose_followup_hint(
+                    user_query, str(args.get("app_name", ""))
+                )
 
         elif name == "computer_control":
             cname, cargs = _coerce_computer_control_open_app_to_open_app(
@@ -373,10 +444,72 @@ async def run_jarvis_tool(
             result = r or "Weather delivered."
 
         elif name == "browser_control":
-            r = await loop.run_in_executor(
-                None, lambda: browser_control(parameters=args, player=ui)
-            )
-            result = r or "Done."
+            uq = (user_query or "").strip() if user_query else ""
+            bargs = args if isinstance(args, dict) else {}
+            action_now = str(bargs.get("action", "")).strip().lower()
+            url_now = str(bargs.get("url", "")).strip()
+            if uq and user_text_requests_proton_read_screen(uq):
+                if hasattr(ui, "write_log"):
+                    ui.write_log(
+                        "SYS: Rerouting browser_control(Proton read intent) -> run_capability(proton_mail/open_native) (simple open-first flow)."
+                    )
+                r = await loop.run_in_executor(
+                    None,
+                    lambda: playbook_runner.run_capability(
+                        {
+                            "capability_id": "proton_mail",
+                            "action": "open_native",
+                        },
+                        player=ui,
+                    ),
+                )
+                result = r or "Done."
+            elif uq and user_text_requests_proton_open(uq):
+                if hasattr(ui, "write_log"):
+                    ui.write_log(
+                        "SYS: Rerouting browser_control(Proton open intent) -> run_capability(proton_mail/open_native)."
+                    )
+                r = await loop.run_in_executor(
+                    None,
+                    lambda: playbook_runner.run_capability(
+                        {
+                            "capability_id": "proton_mail",
+                            "action": "open_native",
+                        },
+                        player=ui,
+                    ),
+                )
+                result = r or "Done."
+            else:
+                if action_now == "go_to" and _looks_like_proton_url(url_now):
+                    bargs = {**bargs, "browser": "edge"}
+                r = await loop.run_in_executor(
+                    None, lambda: browser_control(parameters=bargs, player=ui)
+                )
+                r_text = (r or "").strip()
+                # Baseline recovery: if model issued browser_control without a session,
+                # open Edge directly via Start-menu behavior so "open browser" always works.
+                if "no active browser sessions" in r_text.lower():
+                    wants_open_browser = bool(
+                        re.search(
+                            r"\b(open|launch|start)\b.*\b(browser|edge|web)\b",
+                            uq.lower(),
+                        )
+                    )
+                    if wants_open_browser:
+                        opened = await loop.run_in_executor(
+                            None,
+                            lambda: open_app(
+                                parameters={"app_name": "edge"},
+                                response=None,
+                                player=ui,
+                            ),
+                        )
+                        result = opened or "Opened Edge."
+                    else:
+                        result = r or "Done."
+                else:
+                    result = r or "Done."
 
         elif name == "file_controller":
             r = await loop.run_in_executor(
@@ -420,6 +553,27 @@ async def run_jarvis_tool(
         elif name == "youtube_video":
             r = await loop.run_in_executor(
                 None, lambda: youtube_video(parameters=args, response=None, player=ui)
+            )
+            result = r or "Done."
+
+        elif name == "run_capability":
+            rq = (user_query or "").strip() if user_query else ""
+            rargs = args if isinstance(args, dict) else {}
+            cid = str(rargs.get("capability_id") or rargs.get("capability") or "").strip().lower()
+            if cid == "proton_mail" and user_text_requests_proton_read_screen(rq):
+                action_now = str(rargs.get("action") or "").strip().lower()
+                if action_now in ("", "open", "inbox"):
+                    rargs = {**rargs, "action": "open_native"}
+            if cid == "proton_mail" and user_text_requests_proton_open(rq):
+                action_now = str(rargs.get("action") or "").strip().lower()
+                if action_now in ("", "open", "inbox"):
+                    rargs = {**rargs, "action": "open_native"}
+            r = await loop.run_in_executor(
+                None,
+                lambda: playbook_runner.run_capability(
+                    rargs,
+                    player=ui,
+                ),
             )
             result = r or "Done."
 
@@ -481,10 +635,32 @@ async def run_jarvis_tool(
             result = f"Task started (ID: {task_id})."
 
         elif name == "web_search":
-            r = await loop.run_in_executor(
-                None, lambda: web_search_action(parameters=args, player=ui)
-            )
-            result = r or "Done."
+            uq = (user_query or "").strip() if user_query else ""
+            maybe_url = str(args.get("url", "")).strip().lower() if isinstance(args, dict) else ""
+            is_proton_url = ("protonmail.com" in maybe_url) or ("mail.proton.me" in maybe_url)
+            if uq and user_text_requests_proton_read_screen(uq) and (
+                is_proton_url or ("proton" in uq.lower())
+            ):
+                if hasattr(ui, "write_log"):
+                    ui.write_log(
+                        "SYS: Rerouting web_search(Proton) -> run_capability(proton_mail/open_native) (simple open-first flow)."
+                    )
+                r = await loop.run_in_executor(
+                    None,
+                    lambda: playbook_runner.run_capability(
+                        {
+                            "capability_id": "proton_mail",
+                            "action": "open_native",
+                        },
+                        player=ui,
+                    ),
+                )
+                result = r or "Done."
+            else:
+                r = await loop.run_in_executor(
+                    None, lambda: web_search_action(parameters=args, player=ui)
+                )
+                result = r or "Done."
 
         elif name == "file_processor":
             if not args.get("file_path") and ui.current_file:
@@ -531,7 +707,12 @@ async def run_jarvis_tool(
     if not ui.muted:
         ui.set_state("LISTENING")
 
-    print(f"[JARVIS] 📤 {name} → {str(result)[:80]}")
+    _out = str(result)
+    _lim = _TOOL_RESULT_LOG_CHARS
+    if len(_out) > _lim:
+        print(f"[JARVIS] 📤 {name} → {_out[:_lim]}… ({len(_out)} chars total, truncated for terminal)")
+    else:
+        print(f"[JARVIS] 📤 {name} → {_out}")
     return {"result": result}
 
 
@@ -634,7 +815,7 @@ def _same_line_prefix_before_brace(text: str, open_brace_idx: int) -> str:
 
 
 _STRICT_MULTILINE_SYNTHETIC = frozenset(
-    {"send_message", "open_app", "weather_report"}
+    {"send_message", "open_app", "weather_report", "run_capability"}
 )
 # OpenAI-style JSON tools with ``"arguments": {}`` — empty dict is falsy but valid here.
 _ALLOW_EMPTY_SYNTHETIC_JSON_ARGS = frozenset({"weather_report"})
@@ -925,18 +1106,86 @@ def infer_send_message_platform_from_user_text(user_text: str) -> str:
     return ""
 
 
+def user_text_requests_proton_read_screen(user_text: str) -> bool:
+    """True when the user asks to read/summarize Proton inbox content on screen."""
+    u = (user_text or "").strip().lower()
+    if not u:
+        return False
+    compact = u.replace(" ", "")
+    mentions_proton = ("protonmail" in compact) or ("proton mail" in u) or (
+        ("proton" in u) and ("mail" in u or "email" in u or "inbox" in u)
+    )
+    if not mentions_proton:
+        return False
+    asks_read = bool(
+        re.search(
+            r"\b(read|summari[sz]e|what(?:'s| is)\s+in|inbox|visible|on\s+screen|screen)\b",
+            u,
+        )
+    )
+    asks_send = bool(
+        re.search(r"\b(send|compose|draft|reply|forward|email\s+to|message)\b", u)
+    )
+    return asks_read and not asks_send
+
+
+def user_text_requests_proton_open(user_text: str) -> bool:
+    """True when user asks to open/navigate Proton Mail (without read/send intent)."""
+    u = (user_text or "").strip().lower()
+    if not u:
+        return False
+    compact = u.replace(" ", "")
+    mentions_proton = ("protonmail" in compact) or ("proton mail" in u) or (
+        ("proton" in u) and ("mail" in u or "email" in u or "inbox" in u)
+    )
+    if not mentions_proton:
+        return False
+    asks_open = bool(re.search(r"\b(open|launch|start|go to|goto|navigate)\b", u))
+    asks_read = bool(
+        re.search(r"\b(read|summari[sz]e|what(?:'s| is)\s+in|on\s+screen|screen)\b", u)
+    )
+    asks_send = bool(
+        re.search(r"\b(send|compose|draft|reply|forward|email\s+to|message)\b", u)
+    )
+    return asks_open and not asks_read and not asks_send
+
+
+def user_text_mentions_browser(user_text: str) -> bool:
+    u = (user_text or "").strip().lower()
+    if not u:
+        return False
+    return bool(re.search(r"\b(browser|edge|web)\b", u))
+
+
+def _looks_like_proton_url(url: str) -> bool:
+    u = (url or "").strip().lower()
+    return ("mail.proton.me" in u) or ("protonmail.com" in u)
+
+
 def refine_send_message_args(user_text: str, args: dict) -> dict:
-    """Fill missing ``platform`` from the user's request when the model left it out."""
+    """Fill missing ``platform``, and coerce ``receiver`` to an email when the utterance contains one."""
     if not isinstance(args, dict):
         return args
-    plat = (args.get("platform") or "").strip()
-    if plat:
-        return args
-    inferred = infer_send_message_platform_from_user_text(user_text)
-    if not inferred:
-        return args
-    print(f"[JARVIS] send_message platform inferred from user text: {inferred!r}")
-    return {**args, "platform": inferred}
+    out = dict(args)
+    plat = (out.get("platform") or "").strip()
+    if not plat:
+        inferred = infer_send_message_platform_from_user_text(user_text)
+        if inferred:
+            print(f"[JARVIS] send_message platform inferred from user text: {inferred!r}")
+            out["platform"] = inferred
+
+    recv = (out.get("receiver") or "").strip()
+    ut = (user_text or "").strip()
+    if ut:
+        m = re.search(
+            r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",
+            ut,
+        )
+        if m and (not recv or "@" not in recv):
+            email = m.group(0)
+            print(f"[JARVIS] send_message receiver set from user text email: {email!r}")
+            out["receiver"] = email
+    return out
 
 
 def _line_smells_like_chat_prose(line: str) -> bool:
@@ -957,8 +1206,8 @@ def _line_smells_like_chat_prose(line: str) -> bool:
 
 def _allow_high_risk_synthetic_tool(content: str, tool_calls: list[dict]) -> bool:
     """
-    Block hallucinated ``send_message`` / ``open_app`` / ``weather_report`` when the
-    model mixes chat with a bare JSON tool line (e.g. user says \"Sports\" and the
+    Block hallucinated ``send_message`` / ``open_app`` / ``weather_report`` / ``run_capability``
+    when the model mixes chat with a bare JSON tool line (e.g. user says \"Sports\" and the
     model emits unrelated ``weather_report`` JSON). Still allow explicit
     ``weather_report({...})`` / ``weather_report {`` lines.
     """
@@ -976,6 +1225,10 @@ def _allow_high_risk_synthetic_tool(content: str, tool_calls: list[dict]) -> boo
         return bool(re.search(r"^\s*open_app\s*[\(\{]", content, re.MULTILINE))
     if name == "weather_report":
         return bool(re.search(r"^\s*weather_report\s*[\(\{]", content, re.MULTILINE))
+    if name == "run_capability":
+        # Block prose + buried ``{"name":"run_capability",...}`` (common when models
+        # explain Parse Syntax Grammar with JSON-looking examples).
+        return bool(re.search(r"^\s*run_capability\s*[\(\{]", content, re.MULTILINE))
     return True
 
 
@@ -997,7 +1250,7 @@ def synthetic_tool_calls_from_text(
     - A tool line buried after prose (each non-empty line is tried).
     - JSON starting mid-string only if the same-line text before ``{`` is short
       (≤96 chars), so long chit-chat plus hallucinated tool JSON is ignored.
-    - ``send_message`` / ``open_app`` / ``weather_report`` are not inferred from bare
+    - ``send_message`` / ``open_app`` / ``weather_report`` / ``run_capability`` are not inferred from bare
       JSON if the reply also contains conversational lines unless a line starts with
       an explicit ``tool_name(`` / ``tool_name {`` for that tool.
     """

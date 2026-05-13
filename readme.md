@@ -24,7 +24,7 @@ It's not just an assistant — it's an extension of your digital life.
 | 🖥️ System Control | Launch apps, manage files, execute terminal commands |
 | 🧩 Autonomous Tasks | High-level planning for complex, multi-step goals |
 | 👁️ Visual Awareness | Real-time screen processing and webcam vision (Gemini Live or **local Ollama vision**) |
-| 🧠 Persistent Memory | Deeply remembers your projects, preferences, and personal context |
+| 🧠 Persistent Memory | **`memory/long_term.json`** for durable facts (identity, prefs, projects) plus a **rolling session transcript** in **`memory/session_context.json`** (bounded excerpt in the system prompt — not full tool logs) |
 | ⌨️ Hybrid Input | Type commands, upload files, or use **hold-to-talk (PTT)** in local Ollama mode |
 
 ---
@@ -44,13 +44,45 @@ It's not just an assistant — it's an extension of your digital life.
   - `mode: "fetch"` with `url` for plain-text page extraction,
   - `mode: "compare"` for side-by-side comparisons.
 - ⏰ **Reminder + cron controls (Windows-first)** — `reminder` now supports `action: "schedule" | "list" | "cancel"`, recurring schedules (`daily`, `weekly`, `weekdays` on Windows Task Scheduler), optional stable `job_name`, and optional `open_app_name` to launch/focus a desktop app after each reminder fires.
+- 🗂️ **JSON session memory (local Ollama)** — After each reply, the host appends a short **user / assistant** pair to **`memory/session_context.json`** (gitignored). The next turn injects a **trimmed** “recent conversation” block into the system prompt so continuity does not depend on an ever-growing chat array or duplicate lines. Set **`MARK_CLEAR_SESSION_CONTEXT=1`** once before launch (or delete the file) to wipe session memory.
+- 🧠 **Same-turn `run_capability` dedupe** — Repeated **parse_syntax_grammar** / **numbers_engine** calls on identical `text` in one user turn are skipped after the first real run, with a short tool message so the model stops looping.
+- ⏱️ **Ollama `/api/chat` timeout** — Configurable read timeout via **`MARK_OLLAMA_CHAT_TIMEOUT`** (seconds) or **`ollama_chat_timeout_sec`** in `config/api_keys.json` (clamped), so hung chats fail fast instead of blocking for minutes.
+- 🧩 **`capabilities/` + `ROUTER.json`** — Site and desktop playbooks invoked through **`run_capability`** (`capability_id` + args). See **[Capabilities router](#capabilities-router)** below.
+
+---
+
+## Capabilities router
+
+Mark loads **`capabilities/ROUTER.json`**: an allowlist of **`capability_id`** values the model may pass to **`run_capability`**. Each entry picks a browser profile / start URL and may **`delegate`** to another tool (e.g. **`youtube`** → **`youtube_video`**).
+
+| `capability_id` | Role |
+|-----------------|------|
+| **youtube** | YouTube in Edge; delegates search/play to **`youtube_video`**. |
+| **github** | GitHub in Brave. |
+| **x** | X (Twitter) in Edge. |
+| **chatgpt** | ChatGPT in Edge. |
+| **google_stitch** | Google Stitch in Edge. |
+| **gmail** | Gmail in Edge. |
+| **proton_mail** | Proton Mail in Edge with optional **CDP** automation path; see `capabilities/proton_mail/README.md`. |
+| **vision_read** | Local-only vision: **health**, **read_screen**, **read_camera** (Ollama **`llava`** by default). |
+| **telegram** | Desktop-first notes; optional web. |
+| **whatsapp** | WhatsApp Web in Brave. |
+| **denalidao** | DenaliDAO site in Brave. |
+| **parse_syntax_grammar** | Desktop **`run.py`**: PSG-style **analyze** / **pipeline** / rules / affix tables on local text or paths. |
+| **numbers_engine** | Desktop **`run.py`**: cipher / spec / **math_evaluate** / **monad** pipeline; loads **`data/derived/numbers_engine/quantum_cipher_engine_methods.json`**. |
+
+More detail: **`capabilities/README.md`** and each subfolder’s **`README.md`**.
+
+### Optional local corpus (parse / numbers)
+
+**`data/corpus_config.json`** describes where large **text** and **PDF** libraries live (`data/text`, `data/pdf`). Those directories are **gitignored** so clones stay small. Copy your own materials locally if you use chunking or PDF alignment features.
 
 ---
 
 ## ⚡ Quick Start
 
 ```bash
-git clone https://github.com/FatihMakes/Mark-XXXIX.git
+git clone https://github.com/denalidao/Mark-XXXIX.git
 cd Mark-XXXIX
 pip install -r requirements.txt
 playwright install
@@ -162,6 +194,8 @@ Optional; Aletheon-style names are supported where noted.
 |---|---|
 | `MARK_LLM_PROVIDER` | `ollama` to force local mode, or `gemini` for cloud. |
 | `MARK_OLLAMA_URL` | Ollama base URL (default `http://127.0.0.1:11434`). |
+| `MARK_OLLAMA_CHAT_TIMEOUT` | Seconds for Ollama **`/api/chat`** read timeout (also **`ollama_chat_timeout_sec`** in JSON). |
+| `MARK_CLEAR_SESSION_CONTEXT` | Set to **`1`** / **`true`** once before a run to wipe **`memory/session_context.json`** on the next user turn (then unset by the host). |
 | `MARK_OLLAMA_MODEL` | Fixed chat model tag; overrides config and **disables** the UI dropdown when set. |
 | `ALETHEON_LLM_ASSIST_OLLAMA_URL` | Same as `MARK_OLLAMA_URL` if the latter is unset. |
 | `ALETHEON_LLM_ASSIST_OLLAMA_MODEL` | Same as `MARK_OLLAMA_MODEL` if the latter is unset. |
@@ -190,6 +224,7 @@ Gemini **Live** (mic streamed to the model, native audio) still requires the Gem
 |------|--------|
 | LLM routing / Ollama HTTP | `mark_llm_settings.py` |
 | Local assistant loop + PTT queue | `jarvis_ollama.py`, `main.py` |
+| Rolling session transcript (JSON) | `memory/session_context.py` |
 | Tool runner (Ollama branches) | `jarvis_tool_runner.py` |
 | Speech-to-text | `mark_voice.py` |
 | Local TTS (Coqui + Gemini + SAPI) | `mark_tts.py`, `mark_coqui_tts.py` |

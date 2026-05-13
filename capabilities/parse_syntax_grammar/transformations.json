@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "title": "Quantum Parse Syntax Transformation Rules",
+    "version": "1.0",
+    "purpose": "Sentence-level effects keyed by symbolic conditions evaluated after token tagging.",
+    "note": "Add new conditions in run.py _eval_transformation_rules when you extend this file."
+  },
+  "rules": [
+    {
+      "condition": "word_starts_with_vowel",
+      "effect": "negation_bias"
+    },
+    {
+      "condition": "multiple_verbs",
+      "effect": "fiction_classification"
+    },
+    {
+      "condition": "missing_preposition_anchor",
+      "effect": "unstable_noun_state"
+    },
+    {
+      "condition": "negation_prefix_any",
+      "effect": "reversal_bias"
+    }
+  ]
+}

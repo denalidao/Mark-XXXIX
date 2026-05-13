@@ -212,6 +212,62 @@ def _send_messenger(receiver: str, message: str) -> str:
 
     return f"Message sent to {receiver} via Messenger."
 
+
+_PROTON_DESKTOP_KEYS = frozenset(
+    {
+        "proton mail desktop",
+        "proton desktop",
+        "protonmail desktop",
+    }
+)
+
+
+def _web_proton_platform(platform_str: str) -> bool:
+    """True → Edge/web via ``capabilities/proton_mail`` + ROUTER (not Start-menu app)."""
+    s = platform_str.lower().strip()
+    if s in _PROTON_DESKTOP_KEYS:
+        return False
+    compact = s.replace(" ", "")
+    if "protonmail" in compact:
+        return True
+    return "proton" in s and "mail" in s
+
+
+def _send_proton_mail_web(receiver: str, message: str) -> str:
+    """Spawn ``capabilities/proton_mail/run.py`` (Playwright + ROUTER browser/URL)."""
+    import playbook_runner
+
+    return (
+        playbook_runner.run_capability(
+            {
+                "capability_id": "proton_mail",
+                "action": "send",
+                "to": receiver,
+                "body": message,
+            },
+            player=None,
+        )
+        or "Proton Mail playbook returned no output."
+    )
+
+
+def _send_outcome_ok(result: str) -> bool:
+    """True if the result indicates success (desktop text or playbook JSON ok: true)."""
+    r = (result or "").strip()
+    lo = r.lower()
+    if "could not send" in lo:
+        return False
+    if "sent via" in lo or "sent to" in lo or "message sent" in lo:
+        return True
+    if r.startswith("{"):
+        try:
+            obj = json.loads(r)
+            return bool(obj.get("ok")) is True
+        except json.JSONDecodeError:
+            pass
+    return False
+
+
 _PLATFORM_MAP = [
     ({"whatsapp", "wp", "wapp"},              _send_whatsapp),
     ({"telegram", "tg"},                      _send_telegram),
@@ -227,6 +283,10 @@ def _resolve_platform(platform_str: str):
     for keywords, handler in _PLATFORM_MAP:
         if any(k in key for k in keywords):
             return handler
+    if key in _PROTON_DESKTOP_KEYS:
+        return lambda r, m: _desktop_send("Proton Mail", r, m)
+    if _web_proton_platform(platform_str):
+        return _send_proton_mail_web
     return lambda r, m: _desktop_send(platform_str.strip().title(), r, m)
 
 
@@ -250,13 +310,13 @@ def send_message(
             "Please specify **platform**: the exact desktop app name to use "
             "(e.g. Proton Mail, Gmail, WhatsApp, Telegram). The host does not guess which app."
         )
-    if not _PYAUTOGUI:
+    if not _PYAUTOGUI and not _web_proton_platform(platform):
         return "PyAutoGUI is not installed — cannot control the desktop."
 
-    preview = message_text[:50] + ("…" if len(message_text) > 50 else "")
-    print(f"[SendMessage] 📨 {platform} → {receiver}: {preview}")
+    preview = message_text[:50] + ("..." if len(message_text) > 50 else "")
+    print(f"[SendMessage] {platform} -> {receiver}: {preview}")
     if player:
-        player.write_log(f"[msg] {platform} → {receiver}")
+        player.write_log(f"[msg] {platform} -> {receiver}")
 
     try:
         handler = _resolve_platform(platform)
@@ -264,7 +324,7 @@ def send_message(
     except Exception as e:
         result = f"Could not send message: {e}"
 
-    print(f"[SendMessage] {'✅' if 'sent' in result.lower() else '❌'} {result}")
+    print(f"[SendMessage] [{'OK' if _send_outcome_ok(result) else 'FAIL'}] {result}")
     if player:
         player.write_log(f"[msg] {result}")
 

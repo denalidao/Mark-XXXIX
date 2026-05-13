@@ -43,8 +43,9 @@ game_updater
   shutdown_when_done: boolean (optional)
 
 browser_control
-  action: "go_to" | "search" | "click" | "type" | "scroll" | "get_text" | "press" | "close" (required)
+  action: "go_to" | "connect_cdp" | "search" | "click" | "type" | "scroll" | "get_text" | "press" | "close" (required)
   url: string (for go_to)
+  cdp_url: string (for connect_cdp, e.g. http://127.0.0.1:9222)
   query: string (for search)
   text: string (for click/type)
   direction: "up" | "down" (for scroll)
@@ -96,6 +97,13 @@ desktop_control
 youtube_video
   action: "play" | "summarize" | "trending" (required)
   query: string (for play)
+
+run_capability
+  capability_id: youtube | github | x | chatgpt | google_stitch | gmail | proton_mail | vision_read | telegram | whatsapp | denalidao (required)
+  query: string (optional — YouTube play search e.g. gospel hip hop)
+  action, url, save, region: optional (YouTube — same as youtube_video)
+  dry_run: boolean (optional — e.g. proton_mail preview without opening browser)
+  proton_mail stdin: action read_screen | compose | send | open | inbox; read_screen accepts question?, text?, skip_open?, settle_sec?. Sign in manually; no credentials in prompts.
 
 weather_report
   city: string (required)

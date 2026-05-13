@@ -1,0 +1,610 @@
+{
+  "metadata": {
+    "title": "Quantum Parse Syntax Cipher Engine Methods",
+    "version": "1.0",
+    "purpose": "Engine-ready extraction of cipher, number, letter, symbol, syntax-digit, math-operation, homophone, and monad methods from the David-Wynn Miller Quantum Grammar library.",
+    "source_file": "David_Wynn_Miller_Quantum_Grammar Full Library.txt",
+    "status": "experimental_symbolic_parser",
+    "warning": "This module preserves the document's internal method. It is not standard linguistics, mathematics, cryptography, or legal doctrine.",
+    "evidence_index_path": "data/derived/numbers_engine/numbers_engine_corpus_snippets.json"
+  },
+  "verification_summary": {
+    "user_summary_status": "mostly_correct_with_ocr_and_scope_corrections",
+    "confirmed_items": [
+      "The document contains a NUMBER-VALUE counting list: 0 through 9.",
+      "The document contains a LETTER-VALUES A-Z list.",
+      "The document contains a SYMBOLS list.",
+      "The document gives 4 + 4 x 4 = 20 as correct and 4 + 4 x 4 = 32 as wrong.",
+      "The document contains a FIRST-ORDER operation sequence: 1=multiply, 2=divide, 3=subtract, 4=add.",
+      "The document also contains a conventional-style operational order: parentheses, multiply, divide, subtract, addition, left-to-right.",
+      "The document defines MONAD as a sum and factor combination with cipher numbers.",
+      "The document defines NUMERICAL-CIPHER as using numbers with letters and words to complete thoughts and sentences.",
+      "The document uses syntax-role numbers, not merely A=1 through Z=26 gematria.",
+      "The document uses sound-alike/homophone math such as TO/TOO/FOR/FOUR/FORE/ATE."
+    ],
+    "corrections_or_gaps": [
+      {
+        "item": "LETTER-VALUES list",
+        "issue": "The uploaded OCR shows R,S,1,U,V..., but this is almost certainly OCR corruption of T.",
+        "engine_decision": "Preserve raw OCR but normalize to T in the canonical alphabet."
+      },
+      {
+        "item": "SYMBOLS list",
+        "issue": "OCR contains duplicated or corrupted symbols such as X/\u0425, 1/I, brackets, and punctuation.",
+        "engine_decision": "Store both raw_symbols and normalized_symbols."
+      },
+      {
+        "item": "Word-value algorithm",
+        "issue": "The document defines word-value/cipher conceptually but does not provide a complete deterministic A=1...Z=26 reduction recipe in the retrieved sections.",
+        "engine_decision": "Implement as modular modes: syntax_digit_value, ordinal_letter_value, homophone_value, and symbolic_factor_value."
+      },
+      {
+        "item": "Monad",
+        "issue": "MONAD is a conceptual sum/factor/whole-control method, not a closed equation.",
+        "engine_decision": "Represent as an aggregation method rather than a fixed formula."
+      },
+      {
+        "item": "Operation precedence conflict",
+        "issue": "The document gives both FIRST-ORDER operations and general operational math order.",
+        "engine_decision": "Support two modes: syntax_first_order and standard_math_order."
+      }
+    ]
+  },
+  "core_digit_tables": {
+    "number_value_counting": {
+      "raw": "0,1,2,3,4,5,6,7,8,9",
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "engine_role": "base numeric symbols"
+    },
+    "letter_values": {
+      "raw_ocr": "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,1,U,V,W,X,Y,Z",
+      "normalized": "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z",
+      "ocr_notes": {
+        "1_after_S": "Interpreted as T because the list is otherwise A-Z."
+      },
+      "ordinal_map": {
+        "A": 1,
+        "B": 2,
+        "C": 3,
+        "D": 4,
+        "E": 5,
+        "F": 6,
+        "G": 7,
+        "H": 8,
+        "I": 9,
+        "J": 10,
+        "K": 11,
+        "L": 12,
+        "M": 13,
+        "N": 14,
+        "O": 15,
+        "P": 16,
+        "Q": 17,
+        "R": 18,
+        "S": 19,
+        "T": 20,
+        "U": 21,
+        "V": 22,
+        "W": 23,
+        "X": 24,
+        "Y": 25,
+        "Z": 26
+      },
+      "engine_role": "optional ordinal mode; not the primary syntax-number method"
+    },
+    "symbols": {
+      "raw_ocr": "+,-,\u0425,-,=,1,2,0@,#,$,%,^,&,*(),>,<,~,1,[,),:,\", etc.",
+      "normalized_symbols": [
+        "+",
+        "-",
+        "x",
+        "/",
+        "=",
+        "1",
+        "2",
+        "0",
+        "@",
+        "#",
+        "$",
+        "%",
+        "^",
+        "&",
+        "*",
+        "(",
+        ")",
+        ">",
+        "<",
+        "~",
+        "[",
+        "]",
+        ":",
+        "\"",
+        ".",
+        ",",
+        "|"
+      ],
+      "symbol_roles": {
+        "+": "addition / joining",
+        "-": "subtraction / separation / hyphen compound marker",
+        "x": "multiplication",
+        "/": "division / and-marker in some word-claim sections",
+        "=": "equal pictogram / equivalence",
+        ">": "forward syntax direction",
+        "<": "backward syntax direction",
+        "~": "location-number marker",
+        ":": "prepositional/fact phrase marker",
+        "\"": "quotation / void-writing in the wider rules",
+        "[ ]": "bracketing / closed-area / omit-area",
+        "( )": "parentheses / closed-area / operational grouping"
+      }
+    }
+  },
+  "syntax_digit_roles": {
+    "0": {
+      "term": "conjunction",
+      "examples": [
+        "and",
+        "or"
+      ],
+      "engine_meaning": "neutral connector between nouns or clauses",
+      "contract_status": "neutral"
+    },
+    "1": {
+      "term": "adverb",
+      "patterns": [
+        "1>2",
+        "1>3<>4",
+        "4<1>2",
+        "4<1>3<>4",
+        "4<1<>1<>1<>3<>4"
+      ],
+      "engine_meaning": "modifier, changing fact syntax, void fact, void contract, ailing word context/content",
+      "contract_status": "void_contract"
+    },
+    "2": {
+      "term": "verb",
+      "patterns": [
+        "1>2"
+      ],
+      "engine_meaning": "action-word thinking syntax; correct-word-verb includes IS singular and ARE plural",
+      "contract_status": "action"
+    },
+    "3": {
+      "term": "adjective",
+      "patterns": [
+        "3>4",
+        "1>3><4"
+      ],
+      "engine_meaning": "coloring syntax of facts; illusion/fiction; void/omit",
+      "contract_status": "void_or_fiction"
+    },
+    "4": {
+      "term": "pronoun",
+      "patterns": [
+        "4",
+        "1>3>4",
+        "4<1"
+      ],
+      "engine_meaning": "pronoun/no-no-no meaning; actor or assumption in fiction",
+      "contract_status": "no_contract"
+    },
+    "5": {
+      "term": "position / preposition",
+      "patterns": [
+        "5-6-7"
+      ],
+      "engine_meaning": "now-time rules, voting position, positional start of fact phrase",
+      "contract_status": "fact_phrase_component"
+    },
+    "6": {
+      "term": "lodio / article",
+      "patterns": [
+        "5-6-7"
+      ],
+      "engine_meaning": "original ownership / article position inside fact phrase",
+      "contract_status": "fact_phrase_component"
+    },
+    "7": {
+      "term": "fact / noun / known",
+      "patterns": [
+        "5-6-7"
+      ],
+      "engine_meaning": "now-time contract communication; fact/known; terminal noun component",
+      "contract_status": "fact_phrase_component"
+    },
+    "8": {
+      "term": "past-time tense",
+      "direction": "<<<<<<",
+      "engine_meaning": "void of now-time jurisdiction; fiction-time",
+      "contract_status": "void_now_time"
+    },
+    "9": {
+      "term": "future-time tense",
+      "direction": ">>>>>>",
+      "engine_meaning": "void of now-time jurisdiction; fiction-time",
+      "contract_status": "void_now_time"
+    }
+  },
+  "numbering_code_terms": {
+    "primary_pattern": "5-6-7",
+    "pattern_name": "positional-lodio-fact phrase",
+    "components": [
+      {
+        "digit": 5,
+        "role": "position/preposition"
+      },
+      {
+        "digit": 6,
+        "role": "lodio/article/original ownership"
+      },
+      {
+        "digit": 7,
+        "role": "fact/noun/known"
+      }
+    ],
+    "engine_use": "A valid fact phrase is modeled as 5-6-7. Multiple fact phrases joined by a verb create reversible sentence structures.",
+    "example_forward": {
+      "sentence": "FOR THE TRUSTEE OF THE TRUST IS WITH THE AUTHORITY FOR THE WRITING OF THE CHECKS.",
+      "pattern": "5 6 7 5 6 7 2 5 6 7 5 6 7 5 6 7"
+    },
+    "example_backward": {
+      "sentence": "FOR THE TRUST WITH THE AUTHORITY IS FOR THE WRITING OF THE CHECKS BY THE TRUSTEE.",
+      "pattern": "5 6 7 5 6 7 2 5 6 7 5 6 7 5 6 7"
+    }
+  },
+  "math_operation_modes": {
+    "syntax_first_order": {
+      "name": "FIRST-ORDER OF THE OPERATION",
+      "order": [
+        {
+          "rank": 1,
+          "operation": "multiply",
+          "symbol": "x"
+        },
+        {
+          "rank": 2,
+          "operation": "divide",
+          "symbol": "/"
+        },
+        {
+          "rank": 3,
+          "operation": "subtract",
+          "symbol": "-"
+        },
+        {
+          "rank": 4,
+          "operation": "add",
+          "symbol": "+"
+        }
+      ],
+      "document_example": {
+        "expression": "4 + 4 x 4",
+        "correct_result": 20,
+        "wrong_result": 32,
+        "explanation": "Multiplication is performed before addition."
+      },
+      "engine_flag": "syntax_number_arithmetic"
+    },
+    "standard_math_order_as_documented": {
+      "name": "OPERATIONAL-MATH-ORDER",
+      "order": [
+        {
+          "rank": 1,
+          "operation": "parentheses",
+          "symbol": "()"
+        },
+        {
+          "rank": 2,
+          "operation": "multiply",
+          "symbol": "x"
+        },
+        {
+          "rank": 3,
+          "operation": "divide",
+          "symbol": "/"
+        },
+        {
+          "rank": 4,
+          "operation": "subtract",
+          "symbol": "-"
+        },
+        {
+          "rank": 5,
+          "operation": "addition",
+          "symbol": "+"
+        },
+        {
+          "rank": 6,
+          "operation": "direction",
+          "value": "left-to-right"
+        }
+      ],
+      "engine_flag": "standard_order_document_mode"
+    },
+    "reversibility_test": {
+      "claim": "Math can be proven forwards and backwards.",
+      "example": "1 + 2 = 3 * 3 - 2 = 1",
+      "engine_use": "For transformed sentences, attempt forward/backward equivalence test where structure permits."
+    }
+  },
+  "word_value_methods": {
+    "numerical_cipher": {
+      "definition": "Use numbers with letters and words with a completion of complete thoughts and complete sentences.",
+      "algorithm_status": "conceptual_not_closed",
+      "engine_implementation": [
+        "tokenize sentence",
+        "assign syntax digit role to each token",
+        "optionally assign ordinal A-Z values to letters",
+        "evaluate sentence pattern for 5-6-7 fact phrases and action verb placement",
+        "return word-value as a structured object, not a single scalar unless a chosen mode requires it"
+      ],
+      "output_modes": [
+        "syntax_digit_sequence",
+        "ordinal_letter_sum",
+        "ordinal_letter_product",
+        "homophone_equivalence",
+        "symbolic_factorization",
+        "monad_aggregate"
+      ]
+    },
+    "word_value": {
+      "definition": "The document references word-value of each word, but retrieved sections do not give one closed scalar formula.",
+      "engine_decision": "Represent word-value as a composite record: letters, ordinal values, syntax role, prefix/suffix status, homophones, and phrase role."
+    },
+    "monad": {
+      "definition": "Sum and factor-combination with cipher-numbers with creation of a whole-control through a math-quantum.",
+      "algorithm_status": "aggregate_method",
+      "engine_implementation": {
+        "inputs": [
+          "cipher_numbers",
+          "syntax_digits",
+          "letter_values",
+          "factor_groups"
+        ],
+        "operations": [
+          "sum",
+          "factor",
+          "combine",
+          "whole_control_score"
+        ],
+        "output": "monad_profile"
+      }
+    }
+  },
+  "homophone_math_methods": {
+    "description": "The document uses sound-alike or punning transformations as a math/cipher method. These should be separate from ordinal or syntax-digit arithmetic.",
+    "rules": [
+      {
+        "id": "HOMO-001",
+        "raw": "TO + TOO = FOR",
+        "left_terms": [
+          "to",
+          "too"
+        ],
+        "operation": "sound_equivalence_addition",
+        "result": "for",
+        "notes": "TO is also treated as future tense and void of now-time in other rules."
+      },
+      {
+        "id": "HOMO-002",
+        "raw": "4 + FORE = ATE",
+        "left_terms": [
+          "four",
+          "fore"
+        ],
+        "operation": "sound_equivalence_addition",
+        "result": "ate/eight",
+        "notes": "Connects FOR/FOUR/FORE/ATE/EIGHT sound families."
+      },
+      {
+        "id": "HOMO-003",
+        "raw": "2 + 2 = 4 / TOO + TO = FOR",
+        "left_terms": [
+          "too",
+          "to"
+        ],
+        "operation": "numeric_sound_rewrite",
+        "result": "for/four"
+      },
+      {
+        "id": "HOMO-004",
+        "raw": "4 + 4 = 8 / FOR + FOUR = ATE",
+        "left_terms": [
+          "for",
+          "four"
+        ],
+        "operation": "numeric_sound_rewrite",
+        "result": "ate/eight"
+      }
+    ],
+    "engine_warning": "Homophone math is not arithmetic. Treat it as a rewrite layer with confidence scores."
+  },
+  "time_and_position_cipher_rules": {
+    "invalid_now_time_terms": [
+      {
+        "term": "to",
+        "digit_or_role": 9,
+        "meaning": "future tense",
+        "classification": "void_now_time"
+      },
+      {
+        "term": "from",
+        "digit_or_role": 8,
+        "meaning": "past tense",
+        "classification": "void_now_time"
+      },
+      {
+        "term": "over",
+        "meaning": "different plane",
+        "classification": "non_common_plane"
+      },
+      {
+        "term": "under",
+        "meaning": "different plane",
+        "classification": "non_common_plane"
+      }
+    ],
+    "valid_now_time_position_terms": [
+      "through",
+      "in",
+      "within",
+      "by",
+      "of",
+      "for",
+      "with",
+      "against"
+    ],
+    "engine_use": "Reject or flag future/past/displaced terms when the phrase claims now-time contract jurisdiction."
+  },
+  "directional_syntax": {
+    "symbols": {
+      ">": "forward/rightward relationship",
+      "<": "backward/leftward relationship",
+      "<>": "bidirectional or reciprocal relation"
+    },
+    "examples": [
+      "1>2",
+      "3>4",
+      "4<1",
+      "1>3<>4"
+    ],
+    "engine_use": "Represent token dependencies as directed edges."
+  },
+  "void_and_omission_symbols": {
+    "DPV": "dangling participial verb; void sentence ending syntax",
+    "BOXING": "omit / void content or context",
+    "ITALIC-SYNTAX": "void / omit",
+    "QUOTATION": "void writing / omit content / void jurisdiction / opinion",
+    "BRACKETS": "closed-area void / omit area / court area",
+    "PARENTHESES": "closed-area void / omit context/content",
+    "NC": "no-contract word; void word; negative; ailing; corrupt; fictitious; illusion; negative condition without performance"
+  },
+  "engine_pipeline": [
+    {
+      "step": 1,
+      "name": "normalize_ocr",
+      "actions": [
+        "normalize Cyrillic-looking X to x when used as multiplication",
+        "normalize OCR 1 after S in alphabet list to T",
+        "preserve raw tokens in audit trail"
+      ]
+    },
+    {
+      "step": 2,
+      "name": "tokenize",
+      "actions": [
+        "split words",
+        "preserve punctuation",
+        "detect hyphen compounds",
+        "detect colon phrases",
+        "detect tilde numbers"
+      ]
+    },
+    {
+      "step": 3,
+      "name": "assign_syntax_digits",
+      "actions": [
+        "classify conjunctions as 0",
+        "adverbs as 1",
+        "verbs as 2",
+        "adjectives as 3",
+        "pronouns as 4",
+        "prepositions as 5",
+        "articles as 6",
+        "nouns/facts/knowns as 7",
+        "past terms as 8",
+        "future terms as 9"
+      ]
+    },
+    {
+      "step": 4,
+      "name": "detect_fact_phrases",
+      "actions": [
+        "find 5-6-7 patterns",
+        "mark valid positional-lodio-fact phrases",
+        "flag nouns outside fact phrases"
+      ]
+    },
+    {
+      "step": 5,
+      "name": "apply_time_position_rules",
+      "actions": [
+        "flag to/from as future/past",
+        "flag over/under as different plane",
+        "approve now-time connectors"
+      ]
+    },
+    {
+      "step": 6,
+      "name": "apply_math_mode",
+      "actions": [
+        "choose syntax_first_order or standard_math_order",
+        "evaluate numeric expressions"
+      ]
+    },
+    {
+      "step": 7,
+      "name": "apply_word_value_modes",
+      "actions": [
+        "ordinal letter values",
+        "syntax digit sequence",
+        "homophone rewrites",
+        "prefix/suffix no-contract scan",
+        "monad aggregate"
+      ]
+    },
+    {
+      "step": 8,
+      "name": "produce_audit_report",
+      "actions": [
+        "raw extraction",
+        "normalized form",
+        "syntax digits",
+        "math result",
+        "warnings",
+        "confidence"
+      ]
+    }
+  ],
+  "recommended_output_schema": {
+    "input": "string",
+    "normalized_input": "string",
+    "tokens": [
+      {
+        "text": "string",
+        "normalized": "string",
+        "syntax_digit": "0-9 or null",
+        "syntax_role": "string",
+        "letter_values": [],
+        "ordinal_sum": "number|null",
+        "homophone_group": "string|null",
+        "prefix_flags": [],
+        "suffix_flags": []
+      }
+    ],
+    "syntax_digit_sequence": [],
+    "fact_phrases": [],
+    "math_evaluations": [],
+    "homophone_rewrites": [],
+    "monad_profile": {
+      "cipher_numbers": [],
+      "sum": "number|null",
+      "factors": [],
+      "whole_control_score": "number|null"
+    },
+    "classification": "string",
+    "warnings": [],
+    "source_trace": []
+  }
+}

@@ -32,6 +32,15 @@ from memory.memory_manager import (
     format_memory_for_prompt,
     load_memory,
 )
+from memory.session_context import (
+    append_session_turn,
+    format_session_context_for_prompt,
+    maybe_clear_session_via_env,
+)
+
+# Neural TTS (Coqui) warm-up runs once per process so backend restarts do not
+# spawn a second full GPU weight load.
+_NEURAL_TTS_PRELOAD_STARTED = False
 
 
 def _base_dir() -> Path:
@@ -78,6 +87,25 @@ def _load_system_prompt() -> str:
 QueueItem = Union[str, tuple[str, bytes, int]]
 
 
+def _run_capability_psg_style_dedupe_key(args: dict[str, Any]) -> tuple[str, str] | None:
+    """
+    For ``parse_syntax_grammar`` / ``numbers_engine``, treat ``analyze`` vs ``pipeline``
+    as the same logical work on identical ``text`` so the model cannot spin on
+    analyze→pipeline→pipeline… with the same sentence in one user turn.
+    """
+    if not isinstance(args, dict):
+        return None
+    cid = str(args.get("capability_id") or args.get("capability") or "").strip().lower()
+    if cid not in ("parse_syntax_grammar", "numbers_engine"):
+        return None
+    txt = str(args.get("text") or "").strip()
+    doc = str(args.get("document_path") or args.get("path") or "").strip()
+    body = txt or doc
+    if not body:
+        return None
+    return (cid, body[:12_000])
+
+
 def _ollama_tool_message_body(tool_name: str, payload: dict[str, Any]) -> str:
     """
     Ollama small models often ignore ``{\"result\": ...}`` JSON. Use explicit prose
@@ -113,6 +141,19 @@ def _ollama_tool_message_body(tool_name: str, payload: dict[str, Any]) -> str:
         return (
             "SEND_MESSAGE (host did **not** open messaging apps):\n\n"
             + raw_s
+        )
+    if tool_name == "run_capability":
+        lim = 6_000
+        body = raw_s if len(raw_s) <= lim else raw_s[: lim - 3] + "..."
+        return (
+            "RUN_CAPABILITY (host already executed this call). **Do not** call "
+            "``run_capability`` again with the same ``capability_id`` and same ``text`` "
+            "in this user turn — you already have the JSON below. If the user asked for a "
+            "**rewritten** or **tagged** sentence in Parse Syntax Grammar style, write that "
+            "answer yourself in **plain language** using these results; do not re-invoke "
+            "the tool for the identical sentence.\n\n"
+            "---\n\n"
+            + body
         )
     return json.dumps(payload, ensure_ascii=False)
 
@@ -440,7 +481,6 @@ class JarvisOllama:
         self._ollama_tools = ollama_tools_from_gemini_declarations(tool_declarations)
         # Set False after Ollama returns HTTP 400 with tools (e.g. vision-only chat tag).
         self._ollama_tools_enabled = True
-        self._coqui_preload_started = False
 
     def _build_system_instruction(self) -> str:
         from datetime import datetime
@@ -458,6 +498,9 @@ class JarvisOllama:
         parts = [time_ctx]
         if mem_str:
             parts.append(mem_str)
+        sess = format_session_context_for_prompt()
+        if sess:
+            parts.append(sess)
         parts.append(sys_prompt)
         parts.append(
             "\n[LOCAL MODE]\n"
@@ -467,7 +510,9 @@ class JarvisOllama:
             "**Manner:** Be warm and polite—**please** and **thank you** when fitting; after "
             "finishing a task, a brief courteous acknowledgement is welcome.\n"
             "You are running on a local Ollama model with **no built-in web access**. "
-            "You only know facts from this session, memory, and **tool results**. Never "
+            "You only know facts from **long-term memory**, the **recent conversation** "
+            "excerpt in the system prompt (from ``session_context.json``), this turn's "
+            "messages, and **tool results**. Never "
             "invent headlines, prices, sports scores, or \"breaking\" news — call "
             "**web_search** once with a query that matches the user's topic (e.g. "
             "\"top sports headlines today US\" for sports news, not a generic unrelated query) "
@@ -484,6 +529,20 @@ class JarvisOllama:
             "**web_search** with ``mode: \"fetch\"`` and ``url`` (plain-text excerpt). Use "
             "**web_search** ``mode: \"news\"`` + ``query`` for headline-only news. Use "
             "**web_search** ``mode: \"search\"`` (default) for general snippets.\n"
+            "**Routed site playbooks:** For **YouTube** play by search (e.g. gospel hip hop), "
+            "GitHub/X/Google Stitch/Gmail/etc. per your **capabilities** map, call "
+            "**run_capability** with ``capability_id`` (e.g. ``youtube``) and ``query`` when "
+            "playing a search; ``youtube`` delegates to **youtube_video**. For **parse syntax "
+            "grammar** tagging on local text, ``capability_id: parse_syntax_grammar`` with "
+            "``action: analyze`` or ``pipeline`` and ``text`` or ``document_path`` (see "
+            "``capabilities/parse_syntax_grammar/README.md``). Optional ``action: suffixes`` / "
+            "``prefixes`` to dump affix tables.\n"
+            "**Numbers / cipher engine:** ``capability_id: numbers_engine`` with ``action: "
+            "analyze`` or ``pipeline`` and ``text`` (loads ``data/derived/numbers_engine/"
+            "quantum_cipher_engine_methods.json``). Use ``action: math_evaluate`` + "
+            "``expression`` (e.g. ``4 + 4 x 4``) and optional ``mode: syntax_first_order`` or "
+            "``standard``; ``action: spec`` / ``evidence`` / ``lexicon`` for tables; "
+            "``action: monad`` + ``numbers`` for aggregate profile.\n"
             "**Reminders / cron (Windows):** **reminder** uses **Task Scheduler** + **toast "
             "notifications** — **not** the **Clock** app's alarm list. For **tomorrow** / "
             "**day after tomorrow**, compute **date** as the real calendar day (not **today**); "
@@ -539,9 +598,21 @@ class JarvisOllama:
             "Do **not** call **send_message** unless they explicitly ask to **send**, "
             "**text**, **email**, **DM**, or **message on [named app]** — short social "
             "greetings are **not** desktop messaging tasks.\n"
-            "**send_message:** Always pass **platform** as the desktop app they named "
-            "(e.g. Proton Mail, Gmail, WhatsApp). Never omit **platform** and never default "
-            "to WhatsApp when they asked for email or another client."
+            "**send_message:** Always pass **platform** as the app they named "
+            "(e.g. Proton Mail, Gmail, WhatsApp). **Proton Mail** uses **Edge + web** "
+            "(``capabilities/proton_mail`` + ROUTER): **send/compose** use CDP automation "
+            "after ROUTER warmup; **read mail from the screen without CDP**: "
+            "**run_capability** with ``capability_id: proton_mail``, ``action: read_screen``, "
+            "optional ``question`` / ``text`` for the vision model — user stays **logged in inside Edge**; "
+            "never put **passwords or 2FA** in chat. **Proton Mail Desktop** = Start-menu app. "
+            "Never omit **platform** or default to WhatsApp when they asked for email. "
+            "Pass **receiver** as the full **email address** when they gave one "
+            "(e.g. …@gmail.com), not only a display name.\n"
+            "**Secrets:** Never ask the user for **passwords**, mail **credentials**, "
+            "**2FA codes**, or **recovery keys**. On login/automation failures, suggest "
+            "**sign in manually** in the browser session they already use, "
+            "**close all Edge windows** and retry automation, "
+            "**Proton Mail Desktop**, or composing themselves — never request secrets."
         )
         tail = assistant_persona_final_override(memory)
         if tail:
@@ -672,11 +743,13 @@ class JarvisOllama:
     async def _run_one_exchange(self, user_text: str) -> None:
         assert self._user_queue is not None
         self.ui.set_state("THINKING")
+        maybe_clear_session_via_env()
         sys_instr = self._build_system_instruction()
         messages: list[dict] = [
             {"role": "system", "content": sys_instr},
             {"role": "user", "content": user_text},
         ]
+        psg_style_done: set[tuple[str, str]] = set()
 
         for _round in range(12):
             data = await self._ollama_chat_round(messages)
@@ -820,6 +893,33 @@ class JarvisOllama:
                         args = refine_web_search_args(user_text, args)
                     if tname == "send_message" and isinstance(args, dict):
                         args = refine_send_message_args(user_text, args)
+                    rk = (
+                        _run_capability_psg_style_dedupe_key(args)
+                        if tname == "run_capability" and isinstance(args, dict)
+                        else None
+                    )
+                    if rk is not None and rk in psg_style_done:
+                        self.ui.write_log(
+                            "SYS: Skipped duplicate run_capability for "
+                            f"{rk[0]!r} — same text already analyzed this turn."
+                        )
+                        dup_body = (
+                            "DUPLICATE run_capability suppressed: ``parse_syntax_grammar`` / "
+                            "``numbers_engine`` was already run on this exact ``text`` this user "
+                            "turn. Use the **previous** RUN_CAPABILITY block. **Reply in plain "
+                            "language** (e.g. the rewritten sentence); do not call run_capability "
+                            "again until the user provides new text."
+                        )
+                        tool_entry = {
+                            "role": "tool",
+                            "name": "run_capability",
+                            "content": dup_body,
+                        }
+                        tid = tc.get("id")
+                        if tid:
+                            tool_entry["tool_call_id"] = str(tid)
+                        messages.append(tool_entry)
+                        continue
                     print(f"[JARVIS] 📞 {tname}")
                     out = await run_jarvis_tool(
                         tname,
@@ -831,6 +931,8 @@ class JarvisOllama:
                         speak_from_tools=False,
                         user_query=user_text,
                     )
+                    if rk is not None:
+                        psg_style_done.add(rk)
                     tool_body = _ollama_tool_message_body(tname, out)
                     tool_entry: dict = {
                         "role": "tool",
@@ -854,13 +956,18 @@ class JarvisOllama:
 
             if content:
                 self.ui.write_log(f"Jarvis: {content}")
+                append_session_turn(user_text, content)
                 await self._speak_progressive(content)
             return
 
         self.ui.write_log("Jarvis: (no response after tool rounds)")
-        await self._speak_progressive("Sir, I hit an internal reasoning limit on that request.")
+        limit_msg = "Sir, I hit an internal reasoning limit on that request."
+        append_session_turn(user_text, limit_msg)
+        await self._speak_progressive(limit_msg)
 
     async def run(self) -> None:
+        global _NEURAL_TTS_PRELOAD_STARTED
+
         self._loop = asyncio.get_event_loop()
         self._user_queue = asyncio.Queue()
         self._wire_text_input()
@@ -878,18 +985,30 @@ class JarvisOllama:
             try:
                 self.ui.set_state("LISTENING")
                 self.ui.write_log("SYS: JARVIS online (local Ollama).")
-                if not self._coqui_preload_started:
-                    self._coqui_preload_started = True
+                if not _NEURAL_TTS_PRELOAD_STARTED:
+                    _NEURAL_TTS_PRELOAD_STARTED = True
+                    skip_pre = os.environ.get(
+                        "MARK_SKIP_TTS_PRELOAD", ""
+                    ).strip().lower() in ("1", "true", "yes", "on")
+                    if skip_pre:
+                        print(
+                            "[TTS] MARK_SKIP_TTS_PRELOAD=1 — skipping background neural "
+                            "TTS warm-up (loads on first speech instead)."
+                        )
+                    else:
 
-                    def _preload_coqui() -> None:
-                        try:
-                            from mark_coqui_tts import preload_coqui_engine
+                        def _preload_neural_tts() -> None:
+                            try:
+                                from mark_llm_settings import get_local_tts_backend
 
-                            preload_coqui_engine()
-                        except Exception as ex:
-                            print(f"[TTS] Coqui preload: {ex}")
+                                if get_local_tts_backend() == "coqui":
+                                    from mark_coqui_tts import preload_coqui_engine
 
-                    threading.Thread(target=_preload_coqui, daemon=True).start()
+                                    preload_coqui_engine()
+                            except Exception as ex:
+                                print(f"[TTS] neural TTS preload: {ex}")
+
+                        threading.Thread(target=_preload_neural_tts, daemon=True).start()
                 while True:
                     item: Any = await self._user_queue.get()
                     try:

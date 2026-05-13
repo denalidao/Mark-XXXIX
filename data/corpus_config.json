@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "description": "Authoritative library layout: plain text for search/chunking; PDF for layout, scans, and figures.",
+  "library_text_dir": "data/text",
+  "library_pdf_dir": "data/pdf",
+  "derived_dir": "data/derived/quantum_grammar_library",
+  "chunking": {
+    "mode": "chars",
+    "max_chars_per_chunk": 14000,
+    "overlap_chars": 1200,
+    "max_sentences_per_chunk": 80,
+    "overlap_sentences": 8,
+    "min_chunk_chars": 500
+  },
+  "parse_syntax_grammar": {
+    "relative_run_py": "capabilities/parse_syntax_grammar/run.py",
+    "attach_tags_per_chunk": false
+  },
+  "pdf_alignment": {
+    "enabled": true,
+    "text_source_contains": "Full Library",
+    "pdf_source_contains": "Quantum",
+    "anchor_snippet_chars": 96
+  }
+}

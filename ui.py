@@ -1517,6 +1517,7 @@ class MainWindow(QMainWindow):
         cq_lay.addWidget(self._coqui_model_combo)
         tts_lay.addWidget(self._coqui_cfg_wrap)
         self._coqui_cfg_wrap.setVisible(False)
+
         self._coqui_gemini_failover_chk = QCheckBox(
             "If Coqui fails, try Gemini TTS (uses gemini_api_key)"
         )
@@ -1526,6 +1527,7 @@ class MainWindow(QMainWindow):
         )
         self._coqui_gemini_failover_chk.toggled.connect(self._on_coqui_failover_toggled)
         tts_lay.addWidget(self._coqui_gemini_failover_chk)
+
         self._tts_gemini_voice_lbl = QLabel("Gemini voice")
         self._tts_gemini_voice_lbl.setFont(QFont("Courier New", 7))
         self._tts_gemini_voice_lbl.setStyleSheet(f"color: {C.TEXT_MED}; background: transparent;")
@@ -1785,6 +1787,8 @@ class MainWindow(QMainWindow):
             return
         if not is_ollama_mode():
             self._ollama_model_wrap.setVisible(False)
+            # Voice / TTS backend is independent of chat LLM — show panel in Gemini mode too.
+            self._try_show_ollama_tts_controls()
             return
         self._ollama_model_wrap.setVisible(True)
         locked = ollama_model_env_locked()
@@ -1880,9 +1884,6 @@ class MainWindow(QMainWindow):
             return
         if not hasattr(self, "_tts_backend_wrap"):
             return
-        if not is_ollama_mode():
-            self._tts_backend_wrap.setVisible(False)
-            return
         self._tts_backend_wrap.setVisible(True)
         self._tts_backend_combo.blockSignals(True)
         self._gemini_voice_combo.blockSignals(True)
@@ -1911,8 +1912,11 @@ class MainWindow(QMainWindow):
         self._update_tts_widgets_enabled(get_gemini_api_key())
         env_tb = os.environ.get("MARK_TTS_BACKEND", "").strip()
         base = (
-            "Ollama answers stay local; pick how spoken replies are played."
+            "How **spoken replies** are played (SAPI, Gemini TTS, Coqui). "
+            "Applies in **Ollama and Gemini** chat modes."
         )
+        if not is_ollama_mode():
+            base += " Ollama **chat model** selector is hidden while cloud Gemini drives the LLM."
         if env_tb:
             base += (
                 f" Note: MARK_TTS_BACKEND={env_tb!r} in the environment overrides "

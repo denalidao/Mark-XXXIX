@@ -5,6 +5,7 @@ import asyncio
 import concurrent.futures
 import os
 import platform
+import sys
 import shutil
 import subprocess
 import threading
@@ -13,12 +14,30 @@ from typing import Optional
 
 from playwright.async_api import (
     async_playwright,
+    Browser,
     BrowserContext,
     Page,
     Playwright,
     TimeoutError as PlaywrightTimeout,
 )
 _OS = platform.system()   # "Windows" | "Darwin" | "Linux"
+
+
+def _configure_stdio_replace() -> None:
+    """
+    Windows consoles often default to cp1252; log lines with symbols (e.g. checkmarks)
+    must not raise UnicodeEncodeError and break Playwright actions.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            if hasattr(stream, "reconfigure"):
+                stream.reconfigure(errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass
+
+
+_configure_stdio_replace()
+
 
 def _normalize_url(url: str) -> str:
     """
@@ -103,12 +122,12 @@ def _real_profile_dir(browser: str) -> str:
 
     for p in candidates:
         if p.exists():
-            print(f"[Browser] ✅ Real profile found for {browser}: {p}")
+            print(f"[Browser] [OK] Real profile found for {browser}: {p}")
             return str(p)
 
     fallback = home / ".jarvis_profiles" / browser
     fallback.mkdir(parents=True, exist_ok=True)
-    print(f"[Browser] ⚠️  Real profile not found for {browser}, using: {fallback}")
+    print(f"[Browser] [WARN] Real profile not found for {browser}, using: {fallback}")
     return str(fallback)
 
 def _firefox_profile_dir() -> Optional[str]:
@@ -275,7 +294,7 @@ def _resolve_browser(name: str) -> dict | None:
     if spec.get("special") == "opera_windows":
         exe = _find_opera_windows()
         if not exe:
-            print(f"[Browser] ⚠️  Opera executable not found on Windows.")
+            print(f"[Browser] [WARN] Opera executable not found on Windows.")
         return {"engine": engine, "exe": exe, "channel": channel}
 
     for b in bins:
@@ -347,7 +366,8 @@ def _detect_default_browser() -> str:
 class _BrowserSession:
     """
     Bir tarayıcı örneği için tam oturum.
-    Tüm tarayıcılar launch_persistent_context ile gerçek profil üzerinde açılır.
+    Varsayılan: ``launch_persistent_context`` ile Chromium profilleri.
+    Alternatif: ``connect_over_cdp`` ile zaten çalışan Edge/Chrome’a bağlan (gerçek çerezler).
     """
 
     def __init__(self, browser_name: str):
@@ -361,6 +381,8 @@ class _BrowserSession:
         self._pw:      Playwright     | None = None
         self._context: BrowserContext | None = None
         self._page:    Page           | None = None
+        self._cdp_browser: Browser | None = None
+        self._cdp_endpoint: str | None = None
 
     def start(self):
         if self._thread and self._thread.is_alive():
@@ -394,27 +416,77 @@ class _BrowserSession:
             asyncio.run_coroutine_threadsafe(self._async_close(), self._loop).result(10)
 
     async def _async_close(self):
-        if self._context:
-            try:
-                await self._context.close()
-            except Exception:
-                pass
-        if self._pw:
-            try:
-                await self._pw.stop()
-            except Exception:
-                pass
-        self._context = self._page = None
-
-    async def _close_context_only(self) -> None:
-        """Drop browser context but keep Playwright running (recover from broken sessions)."""
         self._page = None
-        if self._context:
+        if self._cdp_browser is not None:
+            try:
+                await self._cdp_browser.close()
+            except Exception:
+                pass
+            self._cdp_browser = None
+            self._context = None
+            self._cdp_endpoint = None
+        elif self._context is not None:
             try:
                 await self._context.close()
             except Exception:
                 pass
             self._context = None
+        if self._pw:
+            try:
+                await self._pw.stop()
+            except Exception:
+                pass
+            self._pw = None
+
+    async def _close_context_only(self) -> None:
+        """Drop CDP persistent binding or chromium context (keep PW running)."""
+        self._page = None
+        if self._cdp_browser is not None:
+            try:
+                await self._cdp_browser.close()
+            except Exception:
+                pass
+            self._cdp_browser = None
+            self._context = None
+            return
+        if self._context is not None:
+            try:
+                await self._context.close()
+            except Exception:
+                pass
+            self._context = None
+
+    async def connect_cdp(self, endpoint: str) -> str:
+        """
+        Attach to an Edge/Chrome already running with e.g.
+        ``--remote-debugging-port=9222`` (same user-data profile; real cookies/session).
+        """
+        ep = (endpoint or "").strip() or "http://127.0.0.1:9222"
+        await self._close_context_only()
+        assert self._pw is not None
+        try:
+            browser = await self._pw.chromium.connect_over_cdp(ep)
+        except Exception as e:
+            return f"Could not attach CDP at {ep}: {e}"
+        self._cdp_browser = browser
+        if not browser.contexts:
+            await self._close_context_only()
+            self._cdp_endpoint = None
+            return "CDP failed: browser has no contexts."
+        self._context = browser.contexts[0]
+        try:
+            pages = [p for p in self._context.pages if not p.is_closed()]
+            if pages:
+                self._page = pages[-1]
+            else:
+                self._page = await self._context.new_page()
+            u = self._page.url
+        except Exception as e:
+            await self._close_context_only()
+            self._cdp_endpoint = None
+            return f"CDP attached but no usable page: {e}"
+        self._cdp_endpoint = ep
+        return f"Connected via CDP ({ep}); page={u}"
 
     async def _pick_or_new_page(self) -> Page:
         """
@@ -453,6 +525,43 @@ class _BrowserSession:
         Tarayıcıyı gerçek kullanıcı profiliyle başlatır.
         Context zaten açıksa hiçbir şey yapmaz.
         """
+        if self._cdp_browser is not None:
+            if self._context is None:
+                await self._close_context_only()
+            elif self._page is not None and not self._page.is_closed():
+                return
+            else:
+                try:
+                    self._page = await self._pick_or_new_page()
+                    return
+                except Exception as e:
+                    print(f"[Browser] CDP page pick failed ({e}); reconnecting CDP.")
+                    if self._cdp_endpoint:
+                        try:
+                            await self.connect_cdp(self._cdp_endpoint)
+                            self._page = await self._pick_or_new_page()
+                            return
+                        except Exception as e2:
+                            raise RuntimeError(
+                                "CDP Edge session could not recover (refusing to open a 2nd "
+                                f"Playwright browser): {e2}"
+                            ) from e2
+                    await self._close_context_only()
+
+        # CDP was used this session but handle dropped; reconnect instead of launch_persistent.
+        if self._cdp_endpoint and self._cdp_browser is None:
+            try:
+                await self.connect_cdp(self._cdp_endpoint)
+                if self._page is not None and not self._page.is_closed():
+                    return
+                self._page = await self._pick_or_new_page()
+                return
+            except Exception as e:
+                raise RuntimeError(
+                    "Lost CDP connection to Edge; refusing launch_persistent_context "
+                    f"(would open a second browser). {e}"
+                ) from e
+
         if self._context is not None:
             try:
                 _ = self._context.pages
@@ -500,7 +609,7 @@ class _BrowserSession:
 
             await asyncio.sleep(0.5)
             self._page = await self._pick_or_new_page()
-            print(f"[Browser] ✅ Firefox launched")
+            print(f"[Browser] [OK] Firefox launched")
             return
 
         if engine_name == "webkit":
@@ -515,7 +624,7 @@ class _BrowserSession:
             self._context = await engine_obj.launch_persistent_context(safari_profile, **kwargs)
             await asyncio.sleep(0.5)
             self._page = await self._pick_or_new_page()
-            print(f"[Browser] ✅ Safari launched")
+            print(f"[Browser] [OK] Safari launched")
             return
 
         profile = _real_profile_dir(self.browser_name)
@@ -553,13 +662,13 @@ class _BrowserSession:
             try:
                 self._page = await self._pick_or_new_page()
             except Exception as pe:
-                print(f"[Browser] ⚠️  First page attach failed ({pe}); retrying JARVIS profile")
+                print(f"[Browser] [WARN] First page attach failed ({pe}); retrying JARVIS profile")
                 await self._close_context_only()
                 raise RuntimeError(str(pe)) from pe
-            print(f"[Browser] ✅ Launched [{label}] profile={profile}")
+            print(f"[Browser] [OK] Launched [{label}] profile={profile}")
             return
         except Exception as e:
-            print(f"[Browser] ⚠️  Real profile failed for {label}: {e}")
+            print(f"[Browser] [WARN] Real profile failed for {label}: {e}")
 
         jarvis_profile = str(Path.home() / ".jarvis_profiles" / self.browser_name)
         Path(jarvis_profile).mkdir(parents=True, exist_ok=True)
@@ -569,7 +678,7 @@ class _BrowserSession:
             self._context = await engine_obj.launch_persistent_context(jarvis_profile, **kwargs)
             await asyncio.sleep(post_launch_wait)
             self._page = await self._pick_or_new_page()
-            print(f"[Browser] ✅ Launched [{label}] with JARVIS profile")
+            print(f"[Browser] [OK] Launched [{label}] with JARVIS profile")
         except Exception as e2:
             raise RuntimeError(f"Could not launch {self.browser_name}: {e2}") from e2
 
@@ -592,10 +701,14 @@ class _BrowserSession:
             self._page = await self._pick_or_new_page()
         except Exception as e:
             if self._is_playwright_target_error(e):
-                print(f"[Browser] Session stale ({e}); resetting and relaunching.")
-                await self._close_context_only()
-                await self._launch()
-                self._page = await self._pick_or_new_page()
+                print(f"[Browser] Session stale ({e}); recovering.")
+                if self._cdp_endpoint:
+                    await self.connect_cdp(self._cdp_endpoint)
+                    self._page = await self._pick_or_new_page()
+                else:
+                    await self._close_context_only()
+                    await self._launch()
+                    self._page = await self._pick_or_new_page()
             else:
                 raise
         await asyncio.sleep(0.2)
@@ -627,9 +740,13 @@ class _BrowserSession:
                     new_page = await self._context.new_page()
                 except Exception as ne:
                     if self._is_playwright_target_error(ne):
-                        await self._close_context_only()
-                        await self._launch()
-                        new_page = await self._pick_or_new_page()
+                        if self._cdp_endpoint:
+                            await self.connect_cdp(self._cdp_endpoint)
+                            new_page = await self._pick_or_new_page()
+                        else:
+                            await self._close_context_only()
+                            await self._launch()
+                            new_page = await self._pick_or_new_page()
                     else:
                         raise
                 self._page = new_page
@@ -773,9 +890,15 @@ class _BrowserSession:
             new = await ctx.new_page()
         except Exception as ne:
             if self._is_playwright_target_error(ne):
-                await self._close_context_only()
-                await self._launch()
-                new = await self._pick_or_new_page()
+                print(f"[Browser] new_tab session stale ({ne}); recovering.")
+                if self._cdp_endpoint:
+                    await self.connect_cdp(self._cdp_endpoint)
+                    assert self._context is not None
+                    new = await self._context.new_page()
+                else:
+                    await self._close_context_only()
+                    await self._launch()
+                    new = await self._pick_or_new_page()
             else:
                 raise
         self._page = new
@@ -967,6 +1090,15 @@ def browser_control(
             result = sess.run(sess.forward())
         elif action == "reload":
             result = sess.run(sess.reload())
+        elif action == "connect_cdp":
+            endpoint = (
+                params.get("cdp_url")
+                or params.get("endpoint")
+                or "http://127.0.0.1:9222"
+            )
+            if isinstance(endpoint, str):
+                endpoint = endpoint.strip()
+            result = sess.run(sess.connect_cdp(str(endpoint)), timeout=120)
         elif action == "close":
             target = browser or _registry._active_browser
             result = _registry.close_one(target) if target else "No browser specified."

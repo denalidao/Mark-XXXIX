@@ -1,0 +1,7 @@
+url=https://www.youtube.com/watch?v=J7-Rknkrnts
+video_id=J7-Rknkrnts
+title=David Wynn Miller Quantum Grammar FULL SEMINAR - Complete Course Explained
+duration_seconds=34262
+transcript_lines=12518
+transcript_chars=863498
+transcript_file=J7-Rknkrnts_David_Wynn_Miller_Quantum_Grammar_FULL_SEMINAR.txt

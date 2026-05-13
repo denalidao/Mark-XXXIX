@@ -326,8 +326,15 @@ def _try_gemini_tts(
     text: str,
     *,
     on_audio_start: Callable[[], None] | None = None,
+    require_gemini_backend: bool = True,
 ) -> bool:
-    """Synthesize with Gemini TTS API and play. Returns False to fall back to pyttsx3."""
+    """
+    Synthesize with Gemini TTS API and play. Returns False to fall back to pyttsx3.
+
+    When ``require_gemini_backend`` is True (default), only runs if ``tts_backend`` is
+    ``gemini`` — the normal primary path. Set False for **Coqui failover** so
+    Gemini can run while the configured backend stays local.
+    """
     from mark_llm_settings import (
         get_gemini_api_key,
         get_gemini_live_voice_name,
@@ -335,7 +342,7 @@ def _try_gemini_tts(
         get_local_tts_backend,
     )
 
-    if get_local_tts_backend() != "gemini":
+    if require_gemini_backend and get_local_tts_backend() != "gemini":
         ev = os.environ.get("MARK_TTS_BACKEND", "").strip()
         if ev:
             print(
@@ -472,9 +479,10 @@ def speak_mark_tts(
     on_audio_start: Callable[[], None] | None = None,
 ) -> None:
     """
-    Local Jarvis speech (Ollama path): **Coqui** (``tts_backend: coqui``), **Gemini TTS**
-    (``gemini`` + API key), or **Windows SAPI** (``pyttsx3``). Coqui and Gemini failures
-    always fall back to **pyttsx3** so you still hear output while tuning local TTS.
+    Local Jarvis speech (Ollama path): **Coqui** (``tts_backend: coqui``),
+    **Gemini TTS** (``gemini`` + API key), or **Windows SAPI** (``pyttsx3``).
+    Coqui and Gemini failures always fall back to **pyttsx3** so you still hear
+    output while tuning local TTS.
 
     ``on_audio_start`` runs on the TTS thread **immediately before** PortAudio /
     SAPI begins playback — use it to sync the SPEAKING HUD with audible output
@@ -518,7 +526,11 @@ def speak_mark_tts(
             print(
                 "[TTS] Coqui did not speak — trying Gemini TTS (``coqui_failover_to_gemini`` on)."
             )
-            if _try_gemini_tts(text, on_audio_start=on_audio_start):
+            if _try_gemini_tts(
+                text,
+                on_audio_start=on_audio_start,
+                require_gemini_backend=False,
+            ):
                 with _tts_lock:
                     if not _gemini_latency_hint_printed:
                         print(

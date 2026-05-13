@@ -13,3 +13,11 @@ config/api_keys.json
 
 # Local persistent memory (device-specific)
 memory/long_term.json
+memory/session_context.json
+
+# Large optional local corpora (place under data/text and data/pdf locally; see readme)
+data/pdf/
+data/text/
+
+# Scratch / one-off JSON at repo root
+tmp*.json

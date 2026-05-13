@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "title": "Quantum Parse Syntax Root Lexicon",
+    "version": "1.0",
+    "purpose": "Composable stem semantics. Longest matching root inside affix-stripped stem wins (see run.py).",
+    "note": "Experimental symbolic layer — not standard etymology."
+  },
+  "roots": [
+    {
+      "root": "tract",
+      "claimed_meaning": ["draw", "pull", "bind"]
+    },
+    {
+      "root": "scribe",
+      "claimed_meaning": ["write", "record"]
+    },
+    {
+      "root": "pin",
+      "claimed_meaning": ["attach", "fasten", "hold"]
+    },
+    {
+      "root": "juris",
+      "claimed_meaning": ["oath", "law", "speak"]
+    },
+    {
+      "root": "dict",
+      "claimed_meaning": ["say", "declare"]
+    }
+  ]
+}

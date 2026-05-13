@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "title": "Quantum Parse Syntax Dictionary Seeds",
+    "version": "1.0",
+    "purpose": "Optional per-word overrides and pre-composed meanings. Generator / tooling can append entries.",
+    "note": "Exact lemma match (case-insensitive). When present, meaning_synthesis prefers generated_meaning here."
+  },
+  "entries": [
+    {
+      "word": "opinion",
+      "prefix": "o",
+      "root": "pin",
+      "suffix": "ion",
+      "generated_meaning": ["negation", "attachment", "contract"]
+    }
+  ]
+}

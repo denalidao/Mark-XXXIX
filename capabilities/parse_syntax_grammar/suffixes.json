@@ -1,0 +1,833 @@
+{
+  "metadata": {
+    "title": "Quantum Parse Syntax Suffix Engine",
+    "version": "1.0",
+    "purpose": "Contractual-state, entity-state, action-state, condition, motion, office, and jurisdiction suffix module for an experimental Quantum Parse Syntax parser.",
+    "note": "This is an experimental symbolic parsing framework. These meanings are not standard linguistics, law, or accepted etymology."
+  },
+  "rule_groups": {
+    "contract_state": "suffixes interpreted as contract, condition, status, bond, legal state, or recorded relation",
+    "entity_state": "suffixes interpreted as person, office, role, actor, body, or vessel",
+    "action_motion": "suffixes interpreted as motion, doing, process, operation, or performance",
+    "quality_condition": "suffixes interpreted as property, quality, state, or description",
+    "jurisdiction": "suffixes interpreted as domain, office, ship, body, court, or administrative condition"
+  },
+  "suffixes": [
+    {
+      "suffix": "able",
+      "class": [
+        "quality_condition",
+        "capacity"
+      ],
+      "claimed_meaning": "capable of being acted upon",
+      "examples": [
+        "liable",
+        "contractable"
+      ]
+    },
+    {
+      "suffix": "ible",
+      "class": [
+        "quality_condition",
+        "capacity"
+      ],
+      "claimed_meaning": "capable, able to be subjected to action",
+      "examples": [
+        "visible",
+        "eligible"
+      ]
+    },
+    {
+      "suffix": "al",
+      "class": [
+        "contract_state",
+        "quality_condition"
+      ],
+      "claimed_meaning": "relation, condition, contract attachment",
+      "examples": [
+        "legal",
+        "personal"
+      ]
+    },
+    {
+      "suffix": "ial",
+      "class": [
+        "contract_state",
+        "quality_condition"
+      ],
+      "claimed_meaning": "relating to, condition of",
+      "examples": [
+        "judicial",
+        "official"
+      ]
+    },
+    {
+      "suffix": "ical",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "conditioned by quality or doctrine",
+      "examples": [
+        "political",
+        "legalistic"
+      ]
+    },
+    {
+      "suffix": "ance",
+      "class": [
+        "contract_state",
+        "action_motion"
+      ],
+      "claimed_meaning": "act, state, performance condition",
+      "examples": [
+        "performance",
+        "compliance"
+      ]
+    },
+    {
+      "suffix": "ence",
+      "class": [
+        "contract_state",
+        "state"
+      ],
+      "claimed_meaning": "state, condition, presence of action",
+      "examples": [
+        "evidence",
+        "existence"
+      ]
+    },
+    {
+      "suffix": "ancy",
+      "class": [
+        "state"
+      ],
+      "claimed_meaning": "state or quality of condition",
+      "examples": [
+        "vacancy",
+        "tenancy"
+      ]
+    },
+    {
+      "suffix": "ency",
+      "class": [
+        "state",
+        "jurisdiction"
+      ],
+      "claimed_meaning": "state, agency condition, official capacity",
+      "examples": [
+        "agency",
+        "presidency"
+      ]
+    },
+    {
+      "suffix": "ant",
+      "class": [
+        "entity_state",
+        "actor"
+      ],
+      "claimed_meaning": "one who acts or occupies condition",
+      "examples": [
+        "defendant",
+        "claimant"
+      ]
+    },
+    {
+      "suffix": "ent",
+      "class": [
+        "entity_state",
+        "contract_state"
+      ],
+      "claimed_meaning": "entity, state, condition, acting body",
+      "examples": [
+        "president",
+        "respondent"
+      ]
+    },
+    {
+      "suffix": "ar",
+      "class": [
+        "entity_state"
+      ],
+      "claimed_meaning": "one connected with, role holder",
+      "examples": [
+        "registrar",
+        "scholar"
+      ]
+    },
+    {
+      "suffix": "ary",
+      "class": [
+        "entity_state",
+        "quality_condition"
+      ],
+      "claimed_meaning": "connected with, office/body relation",
+      "examples": [
+        "secretary",
+        "beneficiary"
+      ]
+    },
+    {
+      "suffix": "arium",
+      "class": [
+        "jurisdiction",
+        "place"
+      ],
+      "claimed_meaning": "place, container, enclosed domain",
+      "examples": [
+        "aquarium",
+        "sanitarium"
+      ]
+    },
+    {
+      "suffix": "ate",
+      "class": [
+        "action_motion",
+        "office"
+      ],
+      "claimed_meaning": "to make, act, office, state of action",
+      "examples": [
+        "create",
+        "magistrate"
+      ]
+    },
+    {
+      "suffix": "ation",
+      "class": [
+        "contract_state",
+        "action_motion"
+      ],
+      "claimed_meaning": "contractual action-state, process condition",
+      "examples": [
+        "registration",
+        "imagination"
+      ]
+    },
+    {
+      "suffix": "ition",
+      "class": [
+        "contract_state",
+        "action_motion"
+      ],
+      "claimed_meaning": "process condition, contract of action",
+      "examples": [
+        "petition",
+        "condition"
+      ]
+    },
+    {
+      "suffix": "tion",
+      "class": [
+        "contract_state",
+        "action_motion"
+      ],
+      "claimed_meaning": "contractual state, action frozen into condition",
+      "examples": [
+        "jurisdiction",
+        "fiction"
+      ]
+    },
+    {
+      "suffix": "sion",
+      "class": [
+        "contract_state",
+        "action_motion"
+      ],
+      "claimed_meaning": "state of act, motion result",
+      "examples": [
+        "division",
+        "decision"
+      ]
+    },
+    {
+      "suffix": "ion",
+      "class": [
+        "contract_state"
+      ],
+      "claimed_meaning": "contract, condition, state, attachment",
+      "examples": [
+        "opinion",
+        "corporation"
+      ]
+    },
+    {
+      "suffix": "dom",
+      "class": [
+        "jurisdiction",
+        "domain"
+      ],
+      "claimed_meaning": "domain, realm, jurisdiction",
+      "examples": [
+        "kingdom",
+        "freedom"
+      ]
+    },
+    {
+      "suffix": "ed",
+      "class": [
+        "action_motion",
+        "past_state"
+      ],
+      "claimed_meaning": "completed action, past condition",
+      "examples": [
+        "signed",
+        "sealed"
+      ]
+    },
+    {
+      "suffix": "ee",
+      "class": [
+        "entity_state",
+        "recipient"
+      ],
+      "claimed_meaning": "one receiving action or title",
+      "examples": [
+        "trustee",
+        "employee"
+      ]
+    },
+    {
+      "suffix": "eer",
+      "class": [
+        "entity_state",
+        "actor"
+      ],
+      "claimed_meaning": "one engaged in role or operation",
+      "examples": [
+        "auctioneer",
+        "engineer"
+      ]
+    },
+    {
+      "suffix": "er",
+      "class": [
+        "entity_state",
+        "actor"
+      ],
+      "claimed_meaning": "one who performs action",
+      "examples": [
+        "destroyer",
+        "owner"
+      ]
+    },
+    {
+      "suffix": "or",
+      "class": [
+        "entity_state",
+        "actor"
+      ],
+      "claimed_meaning": "one who acts or originates action",
+      "examples": [
+        "grantor",
+        "debtor"
+      ]
+    },
+    {
+      "suffix": "ess",
+      "class": [
+        "entity_state"
+      ],
+      "claimed_meaning": "female role/entity state",
+      "examples": [
+        "actress",
+        "heiress"
+      ]
+    },
+    {
+      "suffix": "est",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "highest degree, maximum condition",
+      "examples": [
+        "greatest",
+        "strongest"
+      ]
+    },
+    {
+      "suffix": "etic",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "relating to quality, system, or doctrine",
+      "examples": [
+        "magnetic",
+        "phonetic"
+      ]
+    },
+    {
+      "suffix": "ful",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "full of, possessing quality",
+      "examples": [
+        "lawful",
+        "trustful"
+      ]
+    },
+    {
+      "suffix": "hood",
+      "class": [
+        "entity_state",
+        "jurisdiction"
+      ],
+      "claimed_meaning": "state, rank, identity condition",
+      "examples": [
+        "personhood",
+        "childhood"
+      ]
+    },
+    {
+      "suffix": "ic",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "of or relating to a quality/system",
+      "examples": [
+        "civic",
+        "public"
+      ]
+    },
+    {
+      "suffix": "ice",
+      "class": [
+        "contract_state",
+        "office"
+      ],
+      "claimed_meaning": "state/practice/office condition",
+      "examples": [
+        "justice",
+        "notice"
+      ]
+    },
+    {
+      "suffix": "ing",
+      "class": [
+        "action_motion"
+      ],
+      "claimed_meaning": "ongoing action, motion, process",
+      "examples": [
+        "doing",
+        "registering"
+      ]
+    },
+    {
+      "suffix": "ism",
+      "class": [
+        "contract_state",
+        "doctrine"
+      ],
+      "claimed_meaning": "doctrine, system, belief contract",
+      "examples": [
+        "capitalism",
+        "legalism"
+      ]
+    },
+    {
+      "suffix": "ist",
+      "class": [
+        "entity_state",
+        "actor"
+      ],
+      "claimed_meaning": "one who practices doctrine/system",
+      "examples": [
+        "artist",
+        "jurist"
+      ]
+    },
+    {
+      "suffix": "ity",
+      "class": [
+        "contract_state",
+        "quality_condition"
+      ],
+      "claimed_meaning": "state, condition, quality",
+      "examples": [
+        "authority",
+        "identity"
+      ]
+    },
+    {
+      "suffix": "ty",
+      "class": [
+        "contract_state",
+        "quality_condition"
+      ],
+      "claimed_meaning": "state, condition, quality",
+      "examples": [
+        "property",
+        "surety"
+      ]
+    },
+    {
+      "suffix": "ive",
+      "class": [
+        "quality_condition",
+        "action_motion"
+      ],
+      "claimed_meaning": "tending toward action, active quality",
+      "examples": [
+        "active",
+        "executive"
+      ]
+    },
+    {
+      "suffix": "ize",
+      "class": [
+        "action_motion"
+      ],
+      "claimed_meaning": "make, cause to become",
+      "examples": [
+        "legalize",
+        "authorize"
+      ]
+    },
+    {
+      "suffix": "ise",
+      "class": [
+        "action_motion"
+      ],
+      "claimed_meaning": "make, cause to become",
+      "examples": [
+        "realise",
+        "authorise"
+      ]
+    },
+    {
+      "suffix": "less",
+      "class": [
+        "negation",
+        "absence"
+      ],
+      "claimed_meaning": "without, lacking, no possession",
+      "examples": [
+        "lawless",
+        "homeless"
+      ]
+    },
+    {
+      "suffix": "like",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "having likeness or simulation",
+      "examples": [
+        "childlike",
+        "warlike"
+      ]
+    },
+    {
+      "suffix": "ling",
+      "class": [
+        "entity_state"
+      ],
+      "claimed_meaning": "small entity, dependent condition",
+      "examples": [
+        "underling",
+        "hireling"
+      ]
+    },
+    {
+      "suffix": "ly",
+      "class": [
+        "modifier",
+        "adverbial"
+      ],
+      "claimed_meaning": "modifier; can convert action/quality into modifying motion",
+      "examples": [
+        "legally",
+        "quickly"
+      ]
+    },
+    {
+      "suffix": "ment",
+      "class": [
+        "contract_state",
+        "mental_state"
+      ],
+      "claimed_meaning": "mind-state, condition, result of action",
+      "examples": [
+        "government",
+        "agreement"
+      ]
+    },
+    {
+      "suffix": "mony",
+      "class": [
+        "contract_state"
+      ],
+      "claimed_meaning": "state of witness, warning, or binding testimony",
+      "examples": [
+        "testimony",
+        "matrimony"
+      ]
+    },
+    {
+      "suffix": "ness",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "state or quality",
+      "examples": [
+        "business",
+        "awareness"
+      ]
+    },
+    {
+      "suffix": "nomy",
+      "class": [
+        "jurisdiction",
+        "law_system"
+      ],
+      "claimed_meaning": "law, management, ordered domain",
+      "examples": [
+        "economy",
+        "autonomy"
+      ]
+    },
+    {
+      "suffix": "oid",
+      "class": [
+        "quality_condition",
+        "simulation"
+      ],
+      "claimed_meaning": "like, resembling, simulated form",
+      "examples": [
+        "humanoid",
+        "asteroid"
+      ]
+    },
+    {
+      "suffix": "ology",
+      "class": [
+        "doctrine",
+        "study"
+      ],
+      "claimed_meaning": "study system, doctrine condition",
+      "examples": [
+        "theology",
+        "biology"
+      ]
+    },
+    {
+      "suffix": "oma",
+      "class": [
+        "state"
+      ],
+      "claimed_meaning": "mass, swelling, condition",
+      "examples": [
+        "carcinoma",
+        "hematoma"
+      ]
+    },
+    {
+      "suffix": "orium",
+      "class": [
+        "jurisdiction",
+        "place"
+      ],
+      "claimed_meaning": "place or domain of function",
+      "examples": [
+        "auditorium",
+        "territorium"
+      ]
+    },
+    {
+      "suffix": "ory",
+      "class": [
+        "quality_condition",
+        "place"
+      ],
+      "claimed_meaning": "place, relating to, function condition",
+      "examples": [
+        "directory",
+        "territory"
+      ]
+    },
+    {
+      "suffix": "ous",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "full of, possessing quality",
+      "examples": [
+        "dangerous",
+        "fictitious"
+      ]
+    },
+    {
+      "suffix": "ious",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "full of, having condition",
+      "examples": [
+        "religious",
+        "suspicious"
+      ]
+    },
+    {
+      "suffix": "eous",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "having nature or quality of",
+      "examples": [
+        "righteous",
+        "courteous"
+      ]
+    },
+    {
+      "suffix": "ry",
+      "class": [
+        "jurisdiction",
+        "office"
+      ],
+      "claimed_meaning": "place, practice, office, system",
+      "examples": [
+        "registry",
+        "notary"
+      ]
+    },
+    {
+      "suffix": "scape",
+      "class": [
+        "jurisdiction",
+        "place"
+      ],
+      "claimed_meaning": "field, view, domain",
+      "examples": [
+        "landscape",
+        "seascape"
+      ]
+    },
+    {
+      "suffix": "ship",
+      "class": [
+        "jurisdiction",
+        "vessel",
+        "entity_state"
+      ],
+      "claimed_meaning": "vessel, office, condition, status",
+      "examples": [
+        "citizenship",
+        "ownership"
+      ]
+    },
+    {
+      "suffix": "some",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "characterized by, producing condition",
+      "examples": [
+        "troublesome",
+        "wholesome"
+      ]
+    },
+    {
+      "suffix": "ster",
+      "class": [
+        "entity_state"
+      ],
+      "claimed_meaning": "person associated with action/role",
+      "examples": [
+        "trickster",
+        "teamster"
+      ]
+    },
+    {
+      "suffix": "th",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "state, measure, ordinal/quality condition",
+      "examples": [
+        "truth",
+        "width"
+      ]
+    },
+    {
+      "suffix": "tude",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "state or condition",
+      "examples": [
+        "attitude",
+        "servitude"
+      ]
+    },
+    {
+      "suffix": "ture",
+      "class": [
+        "contract_state",
+        "structure"
+      ],
+      "claimed_meaning": "state, structure, result",
+      "examples": [
+        "signature",
+        "fixture"
+      ]
+    },
+    {
+      "suffix": "ure",
+      "class": [
+        "contract_state",
+        "state"
+      ],
+      "claimed_meaning": "act, condition, result, possession state",
+      "examples": [
+        "tenure",
+        "procedure"
+      ]
+    },
+    {
+      "suffix": "ward",
+      "class": [
+        "motion",
+        "direction"
+      ],
+      "claimed_meaning": "toward, directional motion",
+      "examples": [
+        "forward",
+        "courtward"
+      ]
+    },
+    {
+      "suffix": "wards",
+      "class": [
+        "motion",
+        "direction"
+      ],
+      "claimed_meaning": "toward, direction of motion",
+      "examples": [
+        "backwards",
+        "towards"
+      ]
+    },
+    {
+      "suffix": "wise",
+      "class": [
+        "quality_condition",
+        "manner"
+      ],
+      "claimed_meaning": "manner, way, mode",
+      "examples": [
+        "clockwise",
+        "otherwise"
+      ]
+    },
+    {
+      "suffix": "y",
+      "class": [
+        "quality_condition"
+      ],
+      "claimed_meaning": "having quality of, condition-like",
+      "examples": [
+        "mighty",
+        "statutory"
+      ]
+    }
+  ]
+}
